@@ -46,7 +46,7 @@ stateDiagram-v2
 |-------|-------------|
 | `pending` | In the queue, waiting for a worker slot |
 | `processing` | Active — downloading, OCR-ing, or calling Gemini |
-| `done` | Completed. Note created in SQLite. |
+| `done` | Completed. Note created in Supabase. |
 | `failed` | All retries exhausted. Error logged. Possibly a fallback note was created. |
 
 ---
@@ -305,12 +305,12 @@ app.get('/api/events', (req, res) => {
 ## Persistence
 
 **Decision: in-memory only.** Server restart loses pending jobs. This is acceptable because:
-- This is a local tool, not a production service
+- This is a personal utility tool, not a high-volume multi-tenant service.
 - Jobs are short-lived (10-60s each)
 - The data source (URL/file) still exists — user can resubmit
 - Adding SQLite persistence for the queue adds significant complexity for marginal benefit
 
-If persistence becomes needed later, the job array can be serialized to a `queue` table in SQLite on shutdown and restored on startup.
+If persistence becomes needed later, the job array can be serialized to a `queue` table in Supabase on shutdown and restored on startup.
 
 ---
 

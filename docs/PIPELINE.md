@@ -1,6 +1,6 @@
 # Pipeline
 
-All content processing flows in Sortd. Three input types → one output type (a Note in SQLite).
+All content processing flows in Sortd. Three input types → one output type (a Note in Supabase).
 
 ---
 
@@ -10,7 +10,7 @@ All content processing flows in Sortd. Three input types → one output type (a 
 |------|------------|----------------|
 | **URL** (reel/video) | `POST /api/process-url` | OG scrape → yt-dlp audio → Gemini transcribe+summarize |
 | **Screenshot** (upload) | `POST /api/process-image` | Tesseract OCR → Gemini summarize+categorize |
-| **Folder watch** (auto) | Chokidar `add` event | Same as screenshot, enqueued automatically |
+| **Folder watch** (local only) | Chokidar `add` event | Same as screenshot, enqueued automatically |
 
 All three paths go through the **processing queue** before hitting Gemini. See QUEUE.md for queue details.
 
@@ -49,7 +49,7 @@ sequenceDiagram
     end
 
     G-->>BE: {transcript, summary, category, tags}
-    BE->>BE: Save note + tags to SQLite
+    BE->>BE: Save note + tags to Supabase
     BE->>BE: Cleanup temp audio file
     BE-->>FE: SSE: job_done {note}
     FE->>U: Toast + note appears in Inbox
@@ -172,7 +172,7 @@ const PLATFORM_CONFIGS = {
     // This is the biggest breakage risk in the entire pipeline.
     retries: 1,
     timeoutMs: 90_000,
-    notes: 'HIGH RISK. Requires Chrome cookies. Breaks on IG updates. Always test before demo.',
+    notes: 'HIGH RISK. In cloud deployments (Railway), cookies must be provided via env var or config file as there is no local browser. Without cookies, metadata-only fallback is likely.',
   },
 
   tiktok: {
@@ -278,7 +278,7 @@ async function processUrl(url) {
     ? aiResult.category
     : 'inbox';
 
-  // Step 4: Save to SQLite
+  // Step 4: Save to Supabase
   return createNote({
     title: aiResult.title,
     content: aiResult.summary,
@@ -345,7 +345,7 @@ sequenceDiagram
     TE-->>Q: Extracted text
     Q->>G: Summarize + categorize text
     G-->>Q: {summary, category, tags}
-    Q->>Q: Save note to SQLite
+    Q->>Q: Save note to Supabase
     Q->>FE: SSE: job_done {note}
     FE->>FE: Toast notification + add to inbox
 ```
@@ -356,7 +356,7 @@ sequenceDiagram
 2. **Enqueue** — job goes into the processing queue (prevents 10 screenshots from hammering Gemini)
 3. **OCR** — Tesseract.js extracts text server-side. Accepts: png, jpg, jpeg, webp, bmp, tiff
 4. **Gemini categorization** — extracted text sent to `categorizeContent()` with the same prompt used for URL metadata fallback
-5. **Note creation** — saved with `source_type: 'screenshot'` or `source_type: 'folder'`
+5. **Note creation** — saved with `source_type: 'screenshot'` or `source_type: 'folder'` (if local)
 
 ### Folder Watcher Config
 

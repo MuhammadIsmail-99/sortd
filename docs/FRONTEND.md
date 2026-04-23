@@ -1,6 +1,6 @@
 # Frontend
 
-Vite + React application. Desktop-first responsive design. Follows the Sortd Design System defined in `DESIGN.md`.
+Vite + React application. Mobile-first responsive design. Follows the Sortd Design System defined in `DESIGN.md`.
 
 ---
 
@@ -316,7 +316,7 @@ The frontend uses CSS custom properties defined in `index.css`. Every component 
 
 ## PWA Share Target Manifest
 
-> ⚠️ **Hackathon note:** The share target requires HTTPS and an installed PWA. Skip for localhost demo. The manifest and service worker below are specced for post-hackathon implementation only.
+The share target is enabled for the production PWA. It requires HTTPS (provided by Vercel). The manifest and service worker below implement this flow.
 
 This is the critical PWA feature that lets users share URLs from mobile browsers directly to Sortd. The manifest goes in `client/public/manifest.json`.
 
@@ -408,7 +408,7 @@ export default defineConfig({
         // NOTE: localhost pattern works for dev/hackathon. For production,
         // use a relative URL pattern or env-based origin.
         runtimeCaching: [{
-          urlPattern: /^http:\/\/localhost:3001\/api\//,
+          urlPattern: /^https:\/\/.*\/api\//,
           handler: 'NetworkFirst',
           options: { cacheName: 'api-cache' },
         }],
@@ -427,7 +427,7 @@ export default defineConfig({
 `src/api.js` — wrapper around fetch for all backend calls.
 
 ```javascript
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL + '/api';
 
 export const api = {
   // Notes
@@ -475,7 +475,7 @@ export function useSSE() {
   const eventsRef = useRef([]);
 
   useEffect(() => {
-    const es = new EventSource('http://localhost:3001/api/events');
+    const es = new EventSource(import.meta.env.VITE_API_URL + '/api/events');
 
     const eventNames = ['job_queued', 'job_started', 'job_done', 'job_failed', 'watch_status'];
     eventNames.forEach(name => {

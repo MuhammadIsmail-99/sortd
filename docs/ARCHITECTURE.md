@@ -11,7 +11,7 @@ graph TD
     subgraph "Frontend · Vite + React · Vercel"
         A[Paste URL] --> D[API Client]
         B[Upload Screenshot] --> D
-        C[Folder Watch Panel] --> D
+        C[PWA Share Target] --> D
         D --> SSE[SSE Listener /api/events]
     end
 
@@ -20,7 +20,6 @@ graph TD
         D -- "POST /api/process-image" --> F
         F --> Q[Processing Queue]
 
-        I[Folder Watcher · Chokidar] --> Q
         Q --> G[URL Processor]
         Q --> H[Image Processor]
 
@@ -39,8 +38,7 @@ graph TD
 
     subgraph "Storage · Supabase"
         K --> O[(PostgreSQL)]
-        O --> P["notes · tags · note_tags · lists"]
-        TF[Temp File Manager] --> TEMP[server/temp/]
+        O --> P["notes · tags · note_tags · lists · settings"]
     end
 
     Q -- SSE --> SSE
@@ -63,10 +61,6 @@ graph TD
 | **OG Scraper** | open-graph-scraper | 6.8.x | Extract title/desc/thumbnail from URLs |
 | **File Uploads** | Multer | 2.0.0 | Multipart form handling |
 | **Queue** | Custom in-memory | — | Rate-limit Gemini, prevent thundering herd |
-AL mode, local |
-| **OG Scraper** | open-graph-scraper | 6.8.x | Extract title/desc/thumbnail from URLs |
-| **File Uploads** | Multer | 2.0.0 | Multipart form handling |
-| **Queue** | Custom in-memory | — | Rate-limit Gemini, prevent thundering herd |
 
 ### System Dependencies (not npm)
 
@@ -82,8 +76,7 @@ AL mode, local |
 
 | Constraint | Rationale |
 |-----------|-----------|
-| Single-device, local-only | SQLite on one machine. No auth, no sync. |
-| No authentication | Localhost-only. Network access = full access. |
+| No authentication | Private deployment. Protected by Supabase RLS if shared. |
 | Gemini free tier: ~1000 req/day | Rate limiting supports ~300-500 captures/day. |
 | yt-dlp breaks periodically | Instagram breaks often. Metadata-only fallback must always work. |
 | 25MB audio file limit | Gemini inline data ceiling. |
@@ -135,11 +128,13 @@ Both return immediately. Client listens on SSE for completion.
 |--------|------|---------|
 | `GET` | `/api/queue/stats` | `{ pending, processing, done, failed, dailyApiCalls, rateLimitRemaining, deadLetterCount }` |
 
-### Folder Watch
+### Folder Watch (Desktop Only)
+
+Folder watching is supported for local development or desktop deployments. In the cloud (Railway), it is disabled as the server has no persistent filesystem to watch.
 
 | Method | Path | Body | Returns |
 |--------|------|------|---------|
-| `GET` | `/api/folder-watch` | — | `{ watching, path }` |
+| `GET` | `/api/folder-watch` | — | `{ watching, path, supported: boolean }` |
 | `POST` | `/api/folder-watch/start` | `{ path }` | `{ watching: true, path }` | 
 | `POST` | `/api/folder-watch/stop` | — | `{ watching: false, path: null }` |
 
@@ -273,29 +268,20 @@ const { result } = await ogs({ url, timeout: 10000 });
 
 ## API Key Storage
 
-**Decision: `.env` file on the backend. `POST /api/settings/gemini-key` writes to the file.**
+**Decision: Supabase `settings` table. The server loads the key on startup or on-demand.**
 
-```bash
-# server/.env
-GEMINI_API_KEY=your-key-here
+Since Railway has an ephemeral filesystem, writing to `.env` is not possible. Instead, a `settings` table in Supabase stores the `gemini_api_key`.
+
+```sql
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
 ```
 
-Loaded via `process.env.GEMINI_API_KEY` on startup. The Settings UI can update it via `POST /api/settings/gemini-key`, which:
-1. Updates `process.env.GEMINI_API_KEY` in-memory (immediate effect)
-2. Writes the new value to `server/.env` on disk (persists across restarts)
-
-```javascript
-// Read, replace or append, write back
-let content = fs.readFileSync(envPath, 'utf8');
-if (/^GEMINI_API_KEY=.*$/m.test(content)) {
-  content = content.replace(/^GEMINI_API_KEY=.*$/m, `GEMINI_API_KEY=${key}`);
-} else {
-  content += `\nGEMINI_API_KEY=${key}`;
-}
-fs.writeFileSync(envPath, content);
-```
-
-No external dependency needed.
+The Settings UI can update it via `POST /api/settings/gemini-key`, which:
+1. Updates the `settings` table in Supabase.
+2. Updates the in-memory cache on the server.
 
 The Settings page shows whether a key is configured (`geminiKeySet: boolean`) but **never** exposes the actual key value to the frontend.
 
@@ -328,8 +314,6 @@ sortd/
 │       ├── folderWatcher.js
 │       ├── queue.js
 │       ├── tempFiles.js
-│       └── __tests__/
-│           └── ytdlp-platforms.test.js
 └── client/
     ├── index.html
     ├── vite.config.js

@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Colors */
+  --color-bg:           #ffffff;
+  --color-bg-warm:      #f6f5f4;
+  --color-text:         rgba(0,0,0,0.95);
+  --color-text-secondary: #615d59;
+  --color-text-muted:   #a39e98;
+  --color-accent:       #0075de;
+  --color-accent-hover: #005bab;
+  --color-accent-focus: #097fe8;
+  --color-badge-bg:     #f2f9ff;
+  --color-badge-text:   #097fe8;
+  --color-border:       rgba(0,0,0,0.1);
+  --color-dark:         #31302e;
+  --color-error:        #dd5b00;
+  --color-success:      #1aae39;
+
+  /* Spacing */
+  --space-2:  2px;   --space-4:  4px;   --space-8:  8px;
+  --space-12: 12px;  --space-16: 16px;  --space-20: 20px;
+  --space-24: 24px;  --space-32: 32px;  --space-48: 48px;
+  --space-64: 64px;
+
+  /* Shadows */
+  --shadow-card: rgba(0,0,0,0.04) 0px 4px 18px,
+                 rgba(0,0,0,0.027) 0px 2.025px 7.85px,
+                 rgba(0,0,0,0.02) 0px 0.8px 2.93px,
+                 rgba(0,0,0,0.01) 0px 0.175px 1.04px;
+  --shadow-deep: rgba(0,0,0,0.01) 0px 1px 3px,
+                 rgba(0,0,0,0.02) 0px 3px 7px,
+                 rgba(0,0,0,0.02) 0px 7px 15px,
+                 rgba(0,0,0,0.04) 0px 14px 28px,
+                 rgba(0,0,0,0.05) 0px 23px 52px;
+
+  /* Radii */
+  --radius-button: 4px;
+  --radius-card:   12px;
+  --radius-hero:   16px;
+  --radius-pill:   9999px;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.5;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+input, textarea {
+  font-family: inherit;
+  font-size: 16px;
+  width: 100%;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-16);
+}
+
+.page-title {
+  font-size: 26px;
+  margin-top: var(--space-32);
+  margin-bottom: var(--space-24);
+  letter-spacing: -0.625px;
+}
+
+.section-title {
+  font-size: 22px;
+  margin-bottom: var(--space-16);
+  letter-spacing: -0.25px;
+}
+
+/* Utils */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-8 { gap: var(--space-8); }
+.gap-16 { gap: var(--space-16); }
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--color-accent);
+  color: white;
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-button);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+  text-decoration: none;
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+.btn-secondary {
+  background-color: rgba(0,0,0,0.05);
+  color: var(--color-text);
+  padding: var(--space-8) var(--space-16);
+  border-radius: var(--radius-button);
+}
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-bg);
+}
+
+.main-content {
+  flex: 1;
+  padding-bottom: 80px; /* Space for BottomNav */
+}
+
+/* Page Transitions */
+.page-enter { opacity: 0; transform: translateY(10px); }
+.page-enter-active { opacity: 1; transform: translateY(0); transition: all 0.3s ease; }
+.page-exit { opacity: 1; transform: translateY(0); }
+.page-exit-active { opacity: 0; transform: translateY(-10px); transition: all 0.3s ease; }
+
+.loading-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(0,0,0,0.1);
+  text-decoration: none;
+}
+
+/* Badges */
+.pill-badge {
+  background-color: var(--color-badge-bg);
+  color: var(--color-badge-text);
+  padding: var(--space-4) var(--space-8);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.125px;
+}
+
+/* Card */
+.card {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-deep);
+}

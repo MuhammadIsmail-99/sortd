@@ -7,7 +7,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
+      includeAssets: ['favicon.ico', 'pwa-192.png', 'pwa-512.png'],
+      devOptions: {
+        enabled: true
+      },
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
@@ -16,21 +19,24 @@ export default defineConfig({
         name: 'Sortd',
         short_name: 'Sortd',
         description: 'Capture and organize content from reels, videos, and screenshots',
-        theme_color: '#0075de',
+        theme_color: '#33b1ff',
+        background_color: '#ffffff',
+        display: 'standalone',
         icons: [
           {
-            src: 'vite.svg',
+            src: 'pwa-192.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: 'vite.svg',
+            src: 'pwa-512.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ],
         share_target: {
-          action: '/add',
+          action: '/',
           method: 'GET',
           params: {
             title: 'title',
@@ -42,7 +48,7 @@ export default defineConfig({
     })
   ],
   server: {
-    port: 5173,
+    port: 5174,
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

@@ -1,15 +1,13 @@
 import Tesseract from 'tesseract.js';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import sharp from 'sharp';
 import { analyzeImage } from './gemini.js';
 import { createNote, getAllLists } from './database.js';
 import { uploadImage } from './storage.js';
 
 /**
- * Process an image file: Gemini Vision -> Supabase Note
- * @param {string} filePath 
- * @param {string} sourceType 
- * @param {Function} updateJobStep 
+ * Process an image file: Optimize -> Gemini Vision -> Storage -> Supabase Note
  */
 export async function processImage(filePath, sourceType = 'screenshot', updateJobStep) {
   if (!fs.existsSync(filePath)) {
@@ -17,18 +15,26 @@ export async function processImage(filePath, sourceType = 'screenshot', updateJo
   }
 
   try {
+    updateJobStep('optimizing');
+    
+    // Optimize image: Convert to WebP, resize if too large, and compress
+    const optimizedBuffer = await sharp(filePath)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toBuffer();
+
     updateJobStep('analyzing');
-    const buffer = fs.readFileSync(filePath);
     const lists = await getAllLists();
     
-    // Use Gemini Vision for intelligent screenshot analysis
-    // This handles non-English text and ignores UI elements automatically
-    const aiResult = await analyzeImage(buffer, 'image/jpeg', lists.map(l => l.name));
+    // Use optimized WebP for Gemini analysis (saves bandwidth and latency)
+    const aiResult = await analyzeImage(optimizedBuffer, 'image/webp', lists.map(l => l.name));
 
     updateJobStep('uploading');
-    const thumbnail = await uploadImage(buffer, 'image/jpeg');
+    // Save optimized WebP to storage
+    const thumbnail = await uploadImage(optimizedBuffer, 'image/webp');
 
     // Run OCR in background for full-text searchability
+    // We use the original file for OCR as it might have higher resolution
     let rawText = '';
     try {
       const { data: { text } } = await Tesseract.recognize(filePath, 'eng+urd');

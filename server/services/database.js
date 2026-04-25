@@ -75,7 +75,7 @@ export async function getNoteById(id) {
 }
 
 export async function getAllNotes(filters = {}) {
-  let query = supabase.from('notes').select('*, note_tags(tags(name))');
+  let query = supabase.from('notes').select('*, note_tags(tags(name))', { count: 'exact' });
 
   if (filters.list_id) {
     query = query.eq('list_id', filters.list_id);
@@ -89,17 +89,19 @@ export async function getAllNotes(filters = {}) {
       config: 'english'
     });
   }
-  
-  // Tag filtering is tricky with joins in Supabase/PostgREST
-  // For simplicity, we filter in JS if tag is provided, or use a complex query
-  // Let's try to do it properly if possible, or just filter in JS for now
-  
-  const { data, error } = await query.order('created_at', { ascending: false });
+
+  if (filters.limit) {
+    const limit = parseInt(filters.limit);
+    const offset = parseInt(filters.offset || 0);
+    query = query.range(offset, offset + limit - 1);
+  }
+
+  const { data, error, count } = await query.order('created_at', { ascending: false });
   if (error) throw error;
 
   let notes = data.map(n => ({
     ...n,
-    tags: n.note_tags.map(nt => nt.tags.name)
+    tags: (n.note_tags || []).map(nt => nt.tags?.name).filter(Boolean)
   }));
   
   notes.forEach(n => delete n.note_tags);
@@ -108,12 +110,7 @@ export async function getAllNotes(filters = {}) {
     notes = notes.filter(n => n.tags.includes(filters.tag));
   }
 
-  if (filters.limit) {
-    const offset = filters.offset || 0;
-    notes = notes.slice(offset, offset + filters.limit);
-  }
-
-  return notes;
+  return { notes, total: count };
 }
 
 export async function updateNote(id, updates) {
@@ -174,9 +171,6 @@ export async function setNoteTags(noteId, tagNames) {
 
 // Lists
 export async function getAllLists() {
-  // Supabase doesn't easily support counts in a simple select without grouping
-  // We'll fetch lists and counts separately or use a view if we were in SQL
-  // For now, let's just fetch lists and then maybe notes to count, or just lists
   const { data: lists, error } = await supabase
     .from('lists')
     .select('*')
@@ -184,10 +178,7 @@ export async function getAllLists() {
 
   if (error) throw error;
   
-  // Note: note_count will be handled by a separate query or in the frontend if needed
-  // But let's try to get it here
   const { data: counts, error: countError } = await supabase.rpc('get_list_counts');
-  // If RPC fails (not defined yet), we'll return lists without counts
   
   return lists.map(list => ({
     ...list,

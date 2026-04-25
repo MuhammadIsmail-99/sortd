@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api';
 import NoteCard from '../components/NoteCard';
 import ProcessingOverlay from '../components/ProcessingOverlay';
 import ManageListsSheet from '../components/ManageListsSheet';
 import { FolderIcon } from '../components/icons';
 import { useSSE } from '../hooks/useSSE';
-import { Search, Filter, Loader2, Inbox as InboxIcon } from 'lucide-react';
+import { Search, Filter, Loader2, Inbox as InboxIcon, ChevronDown } from 'lucide-react';
 
 const PLACEHOLDER_AVATAR = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sortd';
 const PINNED_KEY = 'sortd_pinned_lists';
+const PAGE_SIZE = 10;
 
 function getPinnedIds() {
   try {
@@ -20,22 +22,43 @@ function getPinnedIds() {
 export default function Inbox() {
   const [notes, setNotes]           = useState([]);
   const [loading, setLoading]       = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [search, setSearch]         = useState('');
   const [activeJobs, setActiveJobs] = useState([]);
   const [lists, setLists]             = useState([]);
   const [pinnedIds, setPinnedIds]     = useState(getPinnedIds);
   const [isManaging, setIsManaging]   = useState(false);
   const [showSearch, setShowSearch]   = useState(false);
+  const [page, setPage]               = useState(0);
+  const [hasMore, setHasMore]         = useState(true);
   const searchRef                     = useRef(null);
 
-  const fetchNotes = async () => {
+  const fetchNotes = async (isLoadMore = false) => {
+    if (isLoadMore) setLoadingMore(true);
+    else setLoading(true);
+
     try {
-      const data = await api.getNotes({ search });
-      setNotes(data);
+      const currentPage = isLoadMore ? page + 1 : 0;
+      const { notes: newNotes, total } = await api.getNotes({ 
+        search, 
+        limit: PAGE_SIZE, 
+        offset: currentPage * PAGE_SIZE 
+      });
+      
+      if (isLoadMore) {
+        setNotes(prev => [...prev, ...newNotes]);
+        setPage(currentPage);
+      } else {
+        setNotes(newNotes);
+        setPage(0);
+      }
+      
+      setHasMore(notes.length + newNotes.length < total);
     } catch (err) {
       console.error('Failed to fetch notes');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -74,16 +97,35 @@ export default function Inbox() {
   const visibleLists = listsWithVisibility.filter(l => l.showInInbox).slice(0, 6);
 
   const handleEvent = useCallback((event) => {
+    const notifsActive = localStorage.getItem('sortd_notifications_active') === 'true';
+
     if (event.type === 'job_done') {
-      setNotes(prev => [event.data.note, ...prev]);
+      const note = event.data.note;
+      setNotes(prev => [note, ...prev]);
+
+      if (notifsActive && Notification.permission === 'granted') {
+        new Notification("New Clip Captured!", {
+          body: note.title || "Your content has been processed.",
+          icon: note.thumbnail || "/pwa-192.png",
+          badge: "/pwa-192.png"
+        });
+      }
     }
+
     if (event.type === 'job_queued' || event.type === 'job_started') {
       setActiveJobs(prev => {
-        const exists = prev.find(j => j.data?.jobId === event.data?.jobId);
-        if (exists) return prev.map(j => j.data?.jobId === event.data?.jobId ? event : j);
+        const exists = prev.find(j => (j.data?.jobId || j.jobId) === (event.data?.jobId || event.jobId));
+        if (exists) return prev.map(j => (j.data?.jobId || j.jobId) === (event.data?.jobId || event.jobId) ? event : j);
         return [...prev, event];
       });
     } else if (event.type === 'job_done' || event.type === 'job_failed') {
+      if (event.type === 'job_failed' && notifsActive && Notification.permission === 'granted') {
+        new Notification("Processing Failed", {
+          body: "We couldn't process that link. Please try another one.",
+          icon: "/pwa-192.png"
+        });
+      }
+
       setActiveJobs(prev =>
         prev.map(j =>
           (j.data?.jobId || j.jobId) === (event.data?.jobId || event.jobId) ? event : j
@@ -105,14 +147,16 @@ export default function Inbox() {
     <div className="px-6 pt-12 pb-32 max-w-[680px] mx-auto">
       <ProcessingOverlay jobs={activeJobs} />
 
-      {/* ── Top bar ──────────────────────────────────── */}
+      {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <img
-            src={PLACEHOLDER_AVATAR}
-            alt="avatar"
-            className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-          />
+          <Link to="/settings" className="transition-transform active:scale-95">
+            <img
+              src={PLACEHOLDER_AVATAR}
+              alt="avatar"
+              className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
+            />
+          </Link>
           <div className="w-1 h-1 bg-black/10 rounded-full" />
           <span className="text-[14px] font-extrabold opacity-20 uppercase tracking-widest">
             Sortd
@@ -127,7 +171,7 @@ export default function Inbox() {
         </button>
       </div>
 
-      {/* ── Search input ─────────────────────────────── */}
+      {/* Search input */}
       {showSearch && (
         <div className="mb-6">
           <input
@@ -142,7 +186,7 @@ export default function Inbox() {
         </div>
       )}
 
-      {/* ── Folder grid ──────────────────────────────── */}
+      {/* Folder grid */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[22px] font-extrabold tracking-tight">Your Lists</h2>
         <button
@@ -180,19 +224,40 @@ export default function Inbox() {
         </div>
       )}
 
-      {/* ── Recent Clips ──────────────────────────────── */}
+      {/* Recent Clips */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-[22px] font-extrabold tracking-tight">Recent Clips</h2>
       </div>
 
-      {loading ? (
+      {loading && page === 0 ? (
         <div className="flex justify-center py-20">
           <Loader2 size={32} className="spinner text-[#33b1ff]" />
         </div>
       ) : notes.length > 0 ? (
-        notes.map(note => (
-          <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
-        ))
+        <>
+          {notes.map(note => (
+            <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
+          ))}
+          
+          {hasMore && (
+            <div className="mt-8 flex justify-center">
+              <button 
+                onClick={() => fetchNotes(true)} 
+                disabled={loadingMore}
+                className="btn-primary flex items-center gap-2"
+                style={{ background: 'white', color: '#1a1d1f', border: '1px solid #efefef' }}
+              >
+                {loadingMore ? (
+                  <Loader2 size={18} className="spinner" />
+                ) : (
+                  <>
+                    Load More <ChevronDown size={18} />
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <div className="flex flex-col items-center py-20 opacity-25">
           <InboxIcon size={56} strokeWidth={1} />

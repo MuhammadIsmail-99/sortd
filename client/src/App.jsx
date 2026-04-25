@@ -1,14 +1,25 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Inbox from './pages/Inbox';
-import Lists from './pages/Lists';
-import ListView from './pages/ListView';
-import NoteDetail from './pages/NoteDetail';
-import Settings from './pages/Settings';
-import Favorites from './pages/Favorites';
 import BottomNav from './components/BottomNav';
 import QueueStatus from './components/QueueStatus';
 import AddContentSheet from './components/AddContentSheet';
+import { Loader2 } from 'lucide-react';
+
+// Lazy load pages
+const Inbox       = lazy(() => import('./pages/Inbox'));
+const Lists       = lazy(() => import('./pages/Lists'));
+const ListView    = lazy(() => import('./pages/ListView'));
+const NoteDetail  = lazy(() => import('./pages/NoteDetail'));
+const Settings    = lazy(() => import('./pages/Settings'));
+const Favorites   = lazy(() => import('./pages/Favorites'));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <Loader2 className="spinner text-[#33b1ff]" size={32} />
+    </div>
+  );
+}
 
 function App() {
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
@@ -17,14 +28,16 @@ function App() {
     <Router>
       <div style={{ background: '#f5f7f9', minHeight: '100vh', position: 'relative' }}>
         <main style={{ paddingBottom: '140px' }}>
-          <Routes>
-            <Route index element={<Inbox />} />
-            <Route path="lists" element={<Lists />} />
-            <Route path="lists/:id" element={<ListView />} />
-            <Route path="notes/:id" element={<NoteDetail />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="favorites" element={<Favorites />} />
-          </Routes>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route index element={<Inbox />} />
+              <Route path="lists" element={<Lists />} />
+              <Route path="lists/:id" element={<ListView />} />
+              <Route path="notes/:id" element={<NoteDetail />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="favorites" element={<Favorites />} />
+            </Routes>
+          </Suspense>
         </main>
 
         <QueueStatus />

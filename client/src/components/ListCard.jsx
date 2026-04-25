@@ -1,11 +1,14 @@
 import { Link } from 'react-router-dom';
+import { Folder } from 'lucide-react';
 
 export default function ListCard({ list }) {
-  const { id, name, emoji, color, note_count } = list;
+  const { id, name, color, note_count } = list;
 
   return (
     <Link to={`/lists/${id}`} className="card list-card" style={{ '--list-color': color }}>
-      <div className="list-emoji">{emoji}</div>
+      <div className="list-icon">
+        <Folder size={32} color={color} />
+      </div>
       <div className="list-info">
         <h3 className="list-name">{name}</h3>
         <span className="pill-badge">{note_count || 0}</span>
@@ -20,8 +23,11 @@ export default function ListCard({ list }) {
           text-align: center;
           border-bottom: 3px solid var(--list-color);
         }
-        .list-emoji {
-          font-size: 32px;
+        .list-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 48px;
         }
         .list-info {
           display: flex;

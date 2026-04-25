@@ -9,7 +9,9 @@ import { createNote, getAllLists } from './database.js';
 import { cacheThumbnail } from './storage.js';
 
 const TEMP_DIR = path.resolve('temp');
+const YT_DLP_PATH = path.resolve('bin', 'yt-dlp');
 const MAX_AUDIO_SIZE = 25 * 1024 * 1024; // 25MB
+const COBALT_URL = process.env.COBALT_URL;
 
 const PLATFORM_CONFIGS = {
   youtube: {
@@ -18,7 +20,12 @@ const PLATFORM_CONFIGS = {
     timeoutMs: 60_000,
   },
   instagram: {
-    flags: ['-x', '--audio-format', 'mp3', '--audio-quality', '5', '--max-filesize', '25m', '--no-playlist', '--socket-timeout', '30', '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'],
+    flags: [
+      '-x', '--audio-format', 'mp3', '--audio-quality', '5', 
+      '--max-filesize', '25m', '--no-playlist', '--socket-timeout', '30',
+      '--no-check-certificate',
+      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+    ],
     retries: 1,
     timeoutMs: 90_000,
   },
@@ -68,7 +75,7 @@ async function downloadAudio(url, config) {
     const args = [...config.flags, '-o', filePath.replace('.mp3', '.%(ext)s'), url];
     console.log(`Running yt-dlp with args: ${args.join(' ')}`);
     
-    const child = spawn('yt-dlp', args);
+    const child = spawn(YT_DLP_PATH, args);
     
     let errorOutput = '';
     child.stderr.on('data', (data) => { errorOutput += data.toString(); });
@@ -110,8 +117,18 @@ export async function processUrl(url, updateJobStep) {
   let lastDownloadErr = null;
   const [metadata, audioFile] = await Promise.all([
     scrapeMetadata(url),
-    downloadAudioWithRetry(url, config).catch(err => { lastDownloadErr = err; return null; }),
+    downloadAudioWithRetry(url, config).catch(err => { 
+      console.error('Download failed for', url, ':', err.message);
+      lastDownloadErr = err; 
+      return null; 
+    }),
   ]);
+
+  if (audioFile) {
+    console.log('✅ Download successful:', audioFile);
+  } else {
+    console.log('⚠️ Processing with metadata only (Download failed)');
+  }
 
   let transcript = null;
   let aiResult;
@@ -176,6 +193,18 @@ export async function processUrl(url, updateJobStep) {
 }
 
 async function downloadAudioWithRetry(url, config) {
+  // 1. Try Cobalt first if configured
+  if (COBALT_URL) {
+    try {
+      console.log('🚀 Attempting download via Cobalt...');
+      return await downloadWithCobalt(url);
+    } catch (err) {
+      console.error('⚠️ Cobalt failed:', err.message);
+      console.log('🔄 Falling back to local yt-dlp...');
+    }
+  }
+
+  // 2. Fallback to local yt-dlp
   let attempts = 0;
   while (attempts <= config.retries) {
     try {
@@ -183,10 +212,60 @@ async function downloadAudioWithRetry(url, config) {
     } catch (err) {
       attempts++;
       if (attempts <= config.retries) {
+        console.log(`Retrying download (${attempts}/${config.retries})...`);
         await new Promise(r => setTimeout(r, 2000 * attempts));
       } else {
         throw err;
       }
     }
   }
+}
+
+async function downloadWithCobalt(url) {
+  const cobaltApi = COBALT_URL.endsWith('/') ? COBALT_URL : `${COBALT_URL}/`;
+  const response = await fetch(cobaltApi, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      url: url,
+      aFormat: 'mp3',
+      isAudioOnly: true
+    })
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Cobalt API error (${response.status}): ${errorText}`);
+  }
+
+  const data = await response.json();
+  if (data.status === 'error') {
+    throw new Error(`Cobalt error: ${data.text}`);
+  }
+
+  const downloadUrl = data.url;
+  const fileName = `audio_${Date.now()}.mp3`;
+  const filePath = path.join(TEMP_DIR, fileName);
+
+  console.log('📥 Downloading from Cobalt stream...');
+  const fileResponse = await fetch(downloadUrl);
+  if (!fileResponse.ok) throw new Error('Failed to stream from Cobalt');
+
+  const fileStream = fs.createWriteStream(filePath);
+  const reader = fileResponse.body.getReader();
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    fileStream.write(Buffer.from(value));
+  }
+  
+  return new Promise((resolve, reject) => {
+    fileStream.end();
+    fileStream.on('finish', () => resolve(filePath));
+    fileStream.on('error', reject);
+  });
 }

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { api } from '../api';
 import ListCard from '../components/ListCard';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Folder } from 'lucide-react';
 
 export default function Lists() {
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newList, setNewList] = useState({ name: '', emoji: '📋', color: '#0075de' });
+  const [newList, setNewList] = useState({ name: '', emoji: 'folder', color: '#0075de' });
 
   const fetchLists = async () => {
     try {
@@ -30,7 +30,7 @@ export default function Lists() {
       const created = await api.createList(newList);
       setLists(prev => [...prev, { ...created, note_count: 0 }]);
       setShowCreate(false);
-      setNewList({ name: '', emoji: '📋', color: '#0075de' });
+      setNewList({ name: '', emoji: 'folder', color: '#0075de' });
     } catch (err) {
       alert('Failed to create list');
     }
@@ -79,14 +79,11 @@ export default function Lists() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Emoji</label>
-                  <input
-                    type="text"
-                    required
-                    value={newList.emoji}
-                    onChange={e => setNewList({ ...newList, emoji: e.target.value })}
-                    maxLength={2}
-                  />
+                  <label>Icon</label>
+                  <div className="icon-preview">
+                    <Folder color={newList.color} size={24} />
+                    <span className="text-muted text-sm">Default Folder Icon</span>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label>Color</label>

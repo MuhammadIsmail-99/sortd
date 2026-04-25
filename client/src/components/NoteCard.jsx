@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Star, Clock } from 'lucide-react';
-import TagPill from './TagPill';
 
 export default function NoteCard({ note }) {
-  const { id, title, content, thumbnail, source_platform, starred, created_at, tags } = note;
+  const { id, title, content, source_platform, starred, created_at } = note;
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -12,11 +11,6 @@ export default function NoteCard({ note }) {
 
   return (
     <Link to={`/notes/${id}`} className="card note-card">
-      {thumbnail && (
-        <div className="card-image">
-          <img src={thumbnail} alt={title} loading="lazy" />
-        </div>
-      )}
       <div className="card-content">
         <div className="card-header">
           <h3 className="card-title">{title || 'Untitled Note'}</h3>
@@ -33,11 +27,6 @@ export default function NoteCard({ note }) {
               {formatDate(created_at)}
             </span>
           </div>
-          <div className="card-tags">
-            {tags && tags.slice(0, 2).map(tag => (
-              <TagPill key={tag} name={tag} />
-            ))}
-          </div>
         </div>
       </div>
       <style>{`
@@ -47,17 +36,6 @@ export default function NoteCard({ note }) {
           height: 100%;
           text-decoration: none;
           color: inherit;
-        }
-        .card-image {
-          width: 100%;
-          aspect-ratio: 16 / 9;
-          overflow: hidden;
-          background: var(--color-bg-warm);
-        }
-        .card-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
         }
         .card-content {
           padding: var(--space-16);
@@ -84,7 +62,7 @@ export default function NoteCard({ note }) {
           font-size: 14px;
           color: var(--color-text-secondary);
           display: -webkit-box;
-          -webkit-line-clamp: 2;
+          -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
           overflow: hidden;
           line-height: 1.5;
@@ -115,10 +93,6 @@ export default function NoteCard({ note }) {
           gap: 4px;
           font-size: 12px;
           color: var(--color-text-muted);
-        }
-        .card-tags {
-          display: flex;
-          gap: 4px;
         }
       `}</style>
     </Link>

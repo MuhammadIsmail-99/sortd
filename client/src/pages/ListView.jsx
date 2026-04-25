@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
 import NoteCard from '../components/NoteCard';
-import { ArrowLeft, Loader2, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, MoreVertical, Trash2, Folder } from 'lucide-react';
 
 export default function ListView() {
   const { id } = useParams();
@@ -64,7 +64,9 @@ export default function ListView() {
       </div>
 
       <div className="list-header" style={{ '--list-color': list.color }}>
-        <span className="list-emoji-hero">{list.emoji}</span>
+        <div className="list-icon-hero">
+          <Folder size={64} color={list.color} />
+        </div>
         <h1 className="page-title">{list.name}</h1>
         <span className="pill-badge">{notes.length} notes</span>
       </div>

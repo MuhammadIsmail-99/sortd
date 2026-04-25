@@ -16,27 +16,28 @@ export async function initDB() {
   }
   console.log('✅ Supabase connected');
   
-  // Ensure default 'inbox' list exists
-  const { data: inbox, error: inboxError } = await supabase.from('lists').select('id').eq('id', 'inbox').single();
-  if (inboxError && inboxError.code !== 'PGRST116') { // PGRST116 is 'no rows found'
-     console.error('Error checking for inbox list:', inboxError.message);
-  }
+  // Ensure default lists exist
+  const defaultLists = [
+    { id: 'inbox', name: 'Inbox', emoji: '📥', sort_order: -1 },
+    { id: 'watch-later', name: 'Watch Later', emoji: '📺', sort_order: 0 },
+    { id: 'learn', name: 'Learn', emoji: '🧠', sort_order: 1 },
+    { id: 'ideas', name: 'Ideas', emoji: '💡', sort_order: 2 },
+    { id: 'opportunities', name: 'Opportunities', emoji: '🚀', sort_order: 3 },
+    { id: 'recipes', name: 'Recipes', emoji: '🍳', sort_order: 4 },
+    { id: 'poems-quotes', name: 'Quotes', emoji: '✍️', sort_order: 5 },
+    { id: 'deals', name: 'Deals', emoji: '🏷️', sort_order: 6 },
+    { id: 'events', name: 'Events', emoji: '📅', sort_order: 7 },
+    { id: 'saved', name: 'Saved', emoji: '🔖', sort_order: 8 }
+  ];
 
-  if (!inbox) {
-    console.log('Initializing default "inbox" list...');
-    const { error: insertError } = await supabase.from('lists').insert({
-      id: 'inbox',
-      name: 'Inbox',
-      emoji: '📥',
-      is_default: true,
-      sort_order: -1
-    });
-    if (insertError) {
-      console.error('Error creating default inbox list:', insertError.message);
-    } else {
-      console.log('✅ Default "inbox" list created');
+  for (const list of defaultLists) {
+    const { data: existing } = await supabase.from('lists').select('id').eq('id', list.id).single();
+    if (!existing) {
+      console.log(`Initializing list: ${list.name}...`);
+      await supabase.from('lists').insert({ ...list, is_default: list.id === 'inbox' });
     }
   }
+  console.log('✅ Default lists verified');
 }
 
 // Notes

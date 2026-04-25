@@ -21,7 +21,7 @@ async function getClient() {
 
   genAI = new GoogleGenerativeAI(apiKey);
   model = genAI.getGenerativeModel({ 
-    model: 'gemini-1.5-flash',
+    model: 'gemini-flash-latest',
     generationConfig: {
       responseMimeType: 'application/json',
       temperature: 0.3,
@@ -69,7 +69,30 @@ ${text}
 
   const result = await model.generateContent(prompt);
   const response = await result.response;
-  return JSON.parse(response.text());
+  const textResponse = response.text();
+  
+  try {
+    // 1. Direct parse
+    return JSON.parse(textResponse);
+  } catch (err) {
+    try {
+      // 2. Strip potential markdown and find first/last braces
+      const cleaned = textResponse
+        .replace(/```json\n?|```/g, '')
+        .trim();
+      
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      
+      if (start !== -1 && end !== -1) {
+        return JSON.parse(cleaned.substring(start, end + 1));
+      }
+      throw err;
+    } catch (parseErr) {
+      console.error('Final JSON parse failure. Raw response:', textResponse);
+      throw new Error(`AI returned invalid JSON: ${parseErr.message}`);
+    }
+  }
 }
 
 /**

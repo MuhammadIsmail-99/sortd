@@ -89,11 +89,6 @@ export default function NoteDetail() {
       </div>
 
       <div className="note-hero">
-        {note.thumbnail && (
-          <div className="hero-image">
-            <img src={note.thumbnail} alt={note.title} />
-          </div>
-        )}
         <div className="hero-content">
           <div className="source-meta">
             <span className="source-badge">{note.source_platform}</span>
@@ -124,7 +119,7 @@ export default function NoteDetail() {
             disabled={!editing}
             onChange={e => setEditedNote({...editedNote, list_id: e.target.value})}
           >
-            {lists.map(l => <option key={l.id} value={l.id}>{l.emoji} {l.name}</option>)}
+            {lists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
         </div>
         <div className="org-item">
@@ -172,19 +167,6 @@ export default function NoteDetail() {
         }
         .note-hero {
           margin-bottom: var(--space-32);
-        }
-        .hero-image {
-          width: 100%;
-          aspect-ratio: 16/9;
-          border-radius: var(--radius-hero);
-          overflow: hidden;
-          margin-bottom: var(--space-24);
-          box-shadow: var(--shadow-card);
-        }
-        .hero-image img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
         }
         .source-meta {
           display: flex;

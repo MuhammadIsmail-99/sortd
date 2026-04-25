@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sortd — Your AI-powered save button for the internet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f7f9;
+  --text:#1a1d1f;
+  --text2:#6f767e;
+  --text3:#a39e98;
+  --accent:#33b1ff;
+  --accent2:#1a9fe8;
+  --ai:#6e56cf;
+  --success:#98fb98;
+  --border:#efefef;
+  --white:#ffffff;
+  --r-card:24px;
+  --r-pill:999px;
+  --shadow:0 8px 32px rgba(0,0,0,.06);
+  --shadow-lg:0 20px 60px rgba(0,0,0,.12);
+  --yt:#FF0000;
+  --ig:#E1306C;
+  --tt:#69C9D0;
+  --font:'Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+  --serif:'Instrument Serif',Georgia,serif;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ─── layout ─────────────────────────── */
+.wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+
+/* ─── scroll animation ───────────────── */
+.fi{opacity:0;transform:translateY(28px);transition:opacity .65s ease,transform .65s ease}
+.fi.in{opacity:1;transform:none}
+.fi.d1{transition-delay:.1s}.fi.d2{transition-delay:.2s}.fi.d3{transition-delay:.3s}.fi.d4{transition-delay:.4s}
+
+/* ─── nav ────────────────────────────── */
+#nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(245,247,249,.85);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,0,0,.04);
+  transition:box-shadow .3s;
+}
+#nav.scrolled{box-shadow:var(--shadow)}
+.nav-row{display:flex;align-items:center;justify-content:space-between;height:64px}
+.wm{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--text);text-decoration:none}
+.nav-btn{
+  background:var(--accent);color:#fff;border-radius:var(--r-pill);
+  padding:10px 20px;font-weight:700;font-size:14px;font-family:var(--font);
+  border:none;cursor:pointer;text-decoration:none;transition:all .2s;
+  display:inline-flex;align-items:center;
+}
+.nav-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* ─── hero ───────────────────────────── */
+.hero{padding:80px 0 60px;overflow:hidden;position:relative}
+.hero::before{
+  content:'';position:absolute;top:-200px;right:-200px;
+  width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(51,177,255,.08) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(51,177,255,.1);color:var(--accent);
+  border-radius:var(--r-pill);padding:6px 14px;
+  font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:24px;
+}
+.eyebrow::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0}
+
+h1.headline{
+  font-size:clamp(38px,5.5vw,62px);font-weight:800;
+  line-height:1.1;letter-spacing:-1.5px;color:var(--text);margin-bottom:20px;
+}
+h1.headline em{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-1px}
+
+.hero-sub{
+  font-size:17px;line-height:1.7;color:var(--text2);
+  font-weight:500;margin-bottom:36px;max-width:460px;
+}
+.hero-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+
+.btn-black{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--text);color:#fff;border-radius:var(--r-pill);
+  padding:14px 28px;font-weight:700;font-size:16px;font-family:var(--font);
+  border:none;cursor:pointer;text-decoration:none;transition:all .2s;
+}
+.btn-black:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:6px;
+  background:transparent;color:var(--text2);border-radius:var(--r-pill);
+  padding:14px 20px;font-weight:700;font-size:16px;font-family:var(--font);
+  border:none;cursor:pointer;text-decoration:none;transition:color .2s;
+}
+.btn-ghost:hover{color:var(--text)}
+
+.trust-pills{display:flex;gap:8px;flex-wrap:wrap}
+.t-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--white);border-radius:var(--r-pill);
+  padding:6px 14px;font-size:12px;font-weight:700;box-shadow:var(--shadow);
+}
+.t-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ─── phone mockup ───────────────────── */
+.phone-wrap{display:flex;justify-content:center;align-items:center;position:relative}
+.phone-wrap::before{
+  content:'';position:absolute;
+  width:320px;height:320px;border-radius:50%;
+  background:radial-gradient(circle,rgba(51,177,255,.1) 0%,transparent 70%);
+  pointer-events:none;
+}
+.phone{
+  width:268px;height:548px;
+  background:#111;border-radius:44px;padding:10px;
+  box-shadow:0 48px 96px rgba(0,0,0,.28),0 0 0 1px rgba(255,255,255,.06);
+  position:relative;flex-shrink:0;
+}
+.notch{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);
+  width:88px;height:28px;background:#111;
+  border-radius:0 0 18px 18px;z-index:10;
+}
+.screen{
+  width:100%;height:100%;background:#f5f7f9;
+  border-radius:36px;overflow:hidden;position:relative;
+}
+.scr{padding:38px 13px 74px;height:100%;overflow:hidden}
+
+/* phone topbar */
+.p-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.p-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#a2d2ff,#33b1ff);border:2px solid #fff}
+.p-wm{font-size:8px;font-weight:800;letter-spacing:.15em;color:rgba(0,0,0,.15);text-transform:uppercase}
+.p-sb{width:26px;height:26px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+
+/* phone section label */
+.p-lbl{font-size:9px;font-weight:800;color:#1a1d1f;letter-spacing:-.1px;margin-bottom:7px}
+
+/* folder grid */
+.p-folders{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px}
+.p-folder{border-radius:10px;padding:7px 7px 8px;position:relative;display:flex;flex-direction:column;gap:5px;min-height:58px}
+.p-fc{font-size:7px;font-weight:700;color:rgba(255,255,255,.6);position:absolute;top:5px;right:5px}
+.p-fi{width:18px;height:14px}
+.p-fn{font-size:7px;font-weight:800;color:#fff;line-height:1.2}
+
+/* note cards */
+.p-note{
+  background:#fff;border-radius:13px;padding:8px 7px;
+  margin-bottom:5px;box-shadow:0 2px 8px rgba(0,0,0,.05);
+  display:flex;gap:7px;align-items:center;
+}
+.p-thumb{width:40px;height:40px;border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.p-body{flex:1;overflow:hidden}
+.p-src{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.p-sdot{width:10px;height:10px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.p-sp{font-size:6px;font-weight:800;color:rgba(0,0,0,.2);text-transform:uppercase;letter-spacing:.08em}
+.p-title{font-size:8px;font-weight:800;color:#1a1d1f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+.p-desc{font-size:6.5px;color:rgba(0,0,0,.38);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.p-heart{color:rgba(0,0,0,.08);align-self:flex-start;margin-top:2px;flex-shrink:0;display:flex;}
+
+/* bottom nav */
+.p-nav{position:absolute;bottom:8px;left:13px;right:13px}
+.p-dock{
+  background:#fff;border-radius:20px;height:46px;
+  display:flex;align-items:center;justify-content:space-around;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.04);
+  position:relative;
+}
+.p-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center}
+.p-fab{
+  position:absolute;top:-17px;left:50%;transform:translateX(-50%);
+  width:34px;height:34px;background:#1a1d1f;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:3px solid #f5f7f9;box-shadow:0 4px 12px rgba(0,0,0,.22);
+}
+
+/* ─── section shell ──────────────────── */
+.sec{padding:96px 0}
+.sec-lbl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+.sec-h{font-size:clamp(30px,4vw,46px);font-weight:800;letter-spacing:-1px;line-height:1.15;color:var(--text)}
+.sec-sub{font-size:17px;color:var(--text2);font-weight:500;line-height:1.65;margin-top:12px;max-width:520px}
+.sec-center{text-align:center}.sec-center .sec-sub{margin-left:auto;margin-right:auto}
+
+/* ─── how it works ───────────────────── */
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:64px;position:relative}
+.steps::before{
+  content:'';position:absolute;top:39px;
+  left:calc(16.67% + 16px);right:calc(16.67% + 16px);
+  height:1px;
+  background:repeating-linear-gradient(to right,#e0e4e8 0,#e0e4e8 6px,transparent 6px,transparent 14px);
+}
+.step{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 24px}
+.step-ring{
+  width:78px;height:78px;background:#fff;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--shadow);position:relative;z-index:1;margin-bottom:24px;
+}
+.step-n{
+  position:absolute;top:-6px;right:-6px;
+  width:22px;height:22px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:10px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;
+  border:2px solid var(--bg);
+}
+.step-title{font-size:19px;font-weight:800;letter-spacing:-.3px;margin-bottom:10px}
+.step-desc{font-size:14px;line-height:1.7;color:var(--text2);font-weight:500}
+
+/* ─── feature cards ──────────────────── */
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:56px}
+.feat-card{
+  background:#fff;border-radius:28px;box-shadow:var(--shadow);
+  padding:32px;position:relative;overflow:hidden;
+}
+.feat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--c,var(--accent));
+}
+.feat-icon{
+  width:52px;height:52px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  margin-bottom:20px;
+  background:color-mix(in srgb,var(--c,var(--accent)) 12%,transparent);
+}
+.feat-title{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-bottom:10px}
+.feat-desc{font-size:15px;line-height:1.7;color:var(--text2);font-weight:500}
+
+/* ─── platforms ──────────────────────── */
+.plat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:56px}
+.plat-card{
+  background:#fff;border-radius:28px;box-shadow:var(--shadow);
+  padding:36px 28px;display:flex;flex-direction:column;
+  align-items:flex-start;gap:14px;position:relative;overflow:hidden;
+}
+.plat-card::after{
+  content:'';position:absolute;bottom:-50px;right:-50px;
+  width:140px;height:140px;border-radius:50%;
+  background:var(--pc);opacity:.07;pointer-events:none;
+}
+.plat-icon{
+  width:56px;height:56px;border-radius:18px;
+  display:flex;align-items:center;justify-content:center;
+}
+.plat-name{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.plat-desc{font-size:14px;font-weight:500;color:var(--text2);line-height:1.6}
+.plat-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--bg);border-radius:var(--r-pill);padding:5px 12px;
+  font-size:12px;font-weight:700;color:var(--text2);
+}
+.plat-tag-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* ─── ai showcase ────────────────────── */
+.ai-sec{background:var(--text);padding:96px 0}
+.ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:center}
+
+.mock-card{
+  background:rgba(255,255,255,.04);border-radius:24px;
+  border:1px solid rgba(255,255,255,.08);overflow:hidden;
+}
+.mock-head{
+  padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.mock-back{font-size:13px;font-weight:700;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:6px}
+.mock-acts{display:flex;gap:12px;align-items:center}
+.mock-star{color:#f59e0b;display:flex;align-items:center;}
+.mock-edit{
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);
+  border-radius:var(--r-pill);padding:6px 14px;font-size:12px;font-weight:700;
+}
+.mock-body{padding:20px}
+.mock-src-pill{
+  display:inline-flex;padding:4px 10px;border-radius:var(--r-pill);
+  font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.4);margin-bottom:12px;
+}
+.mock-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.4px;line-height:1.3;margin-bottom:16px}
+.mock-ai{background:#141414;border-radius:16px;padding:18px}
+.mock-ai-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--ai);color:#fff;border-radius:var(--r-pill);
+  padding:4px 10px;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:12px;
+}
+.mock-ai-text{font-size:13px;line-height:1.75;color:rgba(255,255,255,.72)}
+
+.ai-copy .sec-lbl{color:var(--ai)}
+.ai-copy .sec-h{color:#fff}
+.ai-copy .sec-sub{color:rgba(255,255,255,.5)}
+.ai-list{list-style:none;margin-top:32px;display:flex;flex-direction:column;gap:18px}
+.ai-item{display:flex;align-items:flex-start;gap:14px;font-size:15px;font-weight:500;color:rgba(255,255,255,.6);line-height:1.6}
+.ai-item-icon{
+  width:34px;height:34px;border-radius:10px;
+  background:rgba(110,86,207,.2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;margin-top:2px;
+}
+.ai-item strong{color:#fff;display:block;margin-bottom:2px}
+
+/* ─── cta ────────────────────────────── */
+.cta-sec{padding:96px 0;text-align:center}
+.cta-inner{max-width:580px;margin:0 auto}
+.cta-h{font-size:clamp(36px,5vw,56px);font-weight:800;letter-spacing:-1.5px;line-height:1.1;margin-bottom:18px}
+.cta-sub{font-size:17px;color:var(--text2);font-weight:500;line-height:1.65;margin-bottom:40px}
+.cta-acts{display:flex;flex-direction:column;align-items:center;gap:16px}
+.btn-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--text);color:#fff;border-radius:var(--r-pill);
+  padding:18px 44px;font-weight:800;font-size:18px;font-family:var(--font);
+  border:none;cursor:pointer;text-decoration:none;transition:all .25s;letter-spacing:-.3px;
+}
+.btn-cta:hover{transform:translateY(-3px);box-shadow:0 20px 48px rgba(0,0,0,.2)}
+.pwa-hint{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text2)}
+.pwa-icon{
+  width:26px;height:26px;background:var(--text);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* ─── footer ─────────────────────────── */
+footer{border-top:1px solid var(--border);padding:40px 0}
+.foot-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:20px}
+.foot-brand{display:flex;flex-direction:column;gap:6px}
+.foot-tag{font-size:13px;font-weight:500;color:var(--text2)}
+.foot-links{display:flex;gap:24px}
+.foot-link{font-size:14px;font-weight:600;color:var(--text2);text-decoration:none;transition:color .2s}
+.foot-link:hover{color:var(--text)}
+.foot-copy{text-align:center;margin-top:24px;padding-top:24px;border-top:1px solid var(--border);font-size:13px;color:rgba(0,0,0,.22);font-weight:500}
+
+/* ─── responsive ─────────────────────── */
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr;gap:48px}
+  .phone-wrap{order:-1}
+  .ai-grid{grid-template-columns:1fr;gap:48px}
+  .steps{grid-template-columns:1fr;gap:32px}
+  .steps::before{display:none}
+  .plat-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .hero{padding:48px 0 40px}
+  .sec{padding:64px 0}
+  .feat-grid{grid-template-columns:1fr}
+  .foot-row{flex-direction:column;align-items:flex-start}
+  .phone{width:240px;height:490px}
+}
+</style>
+</head>
+<body>
+
+<!-- ──────────── NAV ──────────────────── -->
+<nav id="nav">
+  <div class="wrap nav-row">
+    <a href="#" class="wm">Sortd</a>
+    <a href="#cta" class="nav-btn">Get the App</a>
+  </div>
+</nav>
+
+<!-- ──────────── HERO ─────────────────── -->
+<section class="hero" id="hero">
+  <div class="wrap hero-grid">
+
+    <!-- copy -->
+    <div>
+      <div class="eyebrow fi">AI-Powered Content Capture</div>
+
+      <h1 class="headline fi d1">
+        Stop losing content<br>
+        <em>you actually wanted&nbsp;to&nbsp;keep.</em>
+      </h1>
+
+      <p class="hero-sub fi d2">
+        Paste a link from YouTube, Instagram, or TikTok. Sortd reads it, summarizes it, and files it — automatically.
+      </p>
+
+      <div class="hero-actions fi d3">
+        <a href="#cta" class="btn-black">Try Sortd Free</a>
+        <a href="#how" class="btn-ghost">See how it works →</a>
+      </div>
+
+      <div class="trust-pills fi d4">
+        <span class="t-pill"><span class="t-dot" style="background:var(--yt)"></span>YouTube ✓</span>
+        <span class="t-pill"><span class="t-dot" style="background:var(--ig)"></span>Instagram ✓</span>
+        <span class="t-pill"><span class="t-dot" style="background:var(--tt)"></span>TikTok ✓</span>
+      </div>
+    </div>
+
+    <!-- phone mockup -->
+    <div class="phone-wrap fi d2">
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+          <div class="scr">
+
+            <!-- top bar -->
+            <div class="p-topbar">
+              <div style="display:flex;align-items:center;gap:7px">
+                <div class="p-av"></div>
+                <span class="p-wm">Sortd</span>
+              </div>
+              <div class="p-sb">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.3)" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+            </div>
+
+            <!-- folders -->
+            <div class="p-lbl">Your Lists</div>
+            <div class="p-folders">
+              <div class="p-folder" style="background:#a2d2ff">
+                <span class="p-fc">12</span>
+                <svg class="p-fi" viewBox="0 0 40 32" fill="none"><path d="M0 6C0 2.686 2.686 0 6 0H14.5L18.5 4H34C37.314 4 40 6.686 40 10V26C40 29.314 37.314 32 34 32H6C2.686 32 0 29.314 0 26V6Z" fill="rgba(255,255,255,.35)"/></svg>
+                <span class="p-fn">Recipes</span>
+              </div>
+              <div class="p-folder" style="background:#c9b8f5">
+                <span class="p-fc">8</span>
+                <svg class="p-fi" viewBox="0 0 40 32" fill="none"><path d="M0 6C0 2.686 2.686 0 6 0H14.5L18.5 4H34C37.314 4 40 6.686 40 10V26C40 29.314 37.314 32 34 32H6C2.686 32 0 29.314 0 26V6Z" fill="rgba(255,255,255,.35)"/></svg>
+                <span class="p-fn">Ideas</span>
+              </div>
+              <div class="p-folder" style="background:#ffd6a5">
+                <span class="p-fc">5</span>
+                <svg class="p-fi" viewBox="0 0 40 32" fill="none"><path d="M0 6C0 2.686 2.686 0 6 0H14.5L18.5 4H34C37.314 4 40 6.686 40 10V26C40 29.314 37.314 32 34 32H6C2.686 32 0 29.314 0 26V6Z" fill="rgba(255,255,255,.35)"/></svg>
+                <span class="p-fn">Style</span>
+              </div>
+            </div>
+
+            <!-- clips -->
+            <div class="p-lbl">Recent Clips</div>
+
+            <div class="p-note">
+              <div class="p-thumb" style="background:#fff0f0">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF0000" stroke-width="1.5" stroke-linecap="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+              </div>
+              <div class="p-body">
+                <div class="p-src">
+                  <div class="p-sdot" style="background:#fff0f0"><svg width="5" height="5" viewBox="0 0 24 24" fill="none" stroke="#FF0000" stroke-width="2.5"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/></svg></div>
+                  <span class="p-sp">youtube</span>
+                </div>
+                <div class="p-title">10 Pasta Recipes Under 20 Min</div>
+                <div class="p-desc">Chef Marco shows quick weeknight pasta using pantry staples you already have</div>
+              </div>
+              <div class="p-heart"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+            </div>
+
+            <div class="p-note">
+              <div class="p-thumb" style="background:#fff0f5">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              </div>
+              <div class="p-body">
+                <div class="p-src">
+                  <div class="p-sdot" style="background:#fff0f5"><svg width="5" height="5" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5"/></svg></div>
+                  <span class="p-sp">instagram</span>
+                </div>
+                <div class="p-title">Summer Fit Check GRWM</div>
+                <div class="p-desc">Linen co-ords + white sneakers for casual summer looks on any budget</div>
+              </div>
+              <div class="p-heart"><svg width="9" height="9" viewBox="0 0 24 24" fill="#E1306C" stroke="#E1306C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+            </div>
+
+            <div class="p-note">
+              <div class="p-thumb" style="background:#f0feff">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#69C9D0" stroke-width="1.5" stroke-linecap="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+              </div>
+              <div class="p-body">
+                <div class="p-src">
+                  <div class="p-sdot" style="background:#f0feff"><svg width="5" height="5" viewBox="0 0 24 24" fill="none" stroke="#69C9D0" stroke-width="2.5"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg></div>
+                  <span class="p-sp">tiktok</span>
+                </div>
+                <div class="p-title">Build a SaaS in 30 Days</div>
+                <div class="p-desc">Ship one feature, validate before building more, focus on annual plans</div>
+              </div>
+              <div class="p-heart"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.12)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+            </div>
+
+          </div>
+
+          <!-- bottom nav -->
+          <div class="p-nav">
+            <div class="p-dock">
+              <div class="p-fab">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+              </div>
+              <div class="p-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#33b1ff" stroke-width="2.5" stroke-linecap="round"><path d="M22 12h-6l-2 3H10l-2-3H2"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+              </div>
+              <div class="p-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div style="width:34px"></div>
+              <div class="p-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2" stroke-linecap="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <div class="p-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.18)" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /screen -->
+      </div><!-- /phone -->
+    </div><!-- /phone-wrap -->
+
+  </div><!-- /hero-grid -->
+</section>
+
+<!-- ──────────── HOW IT WORKS ─────────── -->
+<section class="sec" id="how" style="background:#fff">
+  <div class="wrap">
+    <div class="sec-center" style="max-width:560px;margin:0 auto">
+      <div class="sec-lbl fi">How it works</div>
+      <h2 class="sec-h fi d1">Three steps. Zero effort.</h2>
+      <p class="sec-sub fi d2">No more screenshots you never look at. Sortd turns any link into structured knowledge in seconds.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step fi">
+        <div class="step-ring">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#33b1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <div class="step-n">1</div>
+        </div>
+        <h3 class="step-title">Paste a link</h3>
+        <p class="step-desc">Any YouTube Short, Instagram Reel, TikTok, or regular web URL. Just paste and hit send — from any browser or app.</p>
+      </div>
+      <div class="step fi d1">
+        <div class="step-ring">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6e56cf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>
+          <div class="step-n">2</div>
+        </div>
+        <h3 class="step-title">AI reads it</h3>
+        <p class="step-desc">Whisper transcribes the audio. Gemini summarizes, categorizes, and extracts the key ideas in seconds.</p>
+      </div>
+      <div class="step fi d2">
+        <div class="step-ring">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#33b1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
+          <div class="step-n">3</div>
+        </div>
+        <h3 class="step-title">It's organized</h3>
+        <p class="step-desc">Auto-filed into your collections. Full-text searchable. Available forever, right when you need it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── FEATURES ─────────────── -->
+<section class="sec" id="features">
+  <div class="wrap">
+    <div class="sec-center" style="max-width:560px;margin:0 auto">
+      <div class="sec-lbl fi">Features</div>
+      <h2 class="sec-h fi d1">Built for the way you<br>actually consume content.</h2>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat-card fi" style="--c:#6e56cf">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6e56cf" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div>
+        <h3 class="feat-title">Live AI Processing</h3>
+        <p class="feat-desc">Watch in real time as Sortd pulls the transcript, generates a summary, and drops the note into your inbox. Zero lag, zero waiting.</p>
+      </div>
+      <div class="feat-card fi d1" style="--c:#33b1ff">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#33b1ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></div>
+        <h3 class="feat-title">Auto-Categorized</h3>
+        <p class="feat-desc">Recipes go into Recipes. Style inspo lands in Style. Sortd reads the content and routes it to the right list automatically.</p>
+      </div>
+      <div class="feat-card fi d2" style="--c:#16a34a">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></div>
+        <h3 class="feat-title">Full-Text Search</h3>
+        <p class="feat-desc">Find anything by keyword months later. Search across titles, summaries, and full transcripts — all indexed, all instant.</p>
+      </div>
+      <div class="feat-card fi d3" style="--c:#1a1d1f">
+        <div class="feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1a1d1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></div>
+        <h3 class="feat-title">Share from Any App</h3>
+        <p class="feat-desc">Installs as a PWA with a Share Target. Share directly from Instagram, YouTube, or TikTok — no copy-pasting ever again.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── PLATFORMS ────────────── -->
+<section class="sec" id="platforms" style="background:#fff">
+  <div class="wrap">
+    <div class="sec-center" style="max-width:560px;margin:0 auto">
+      <div class="sec-lbl fi">Platforms</div>
+      <h2 class="sec-h fi d1">Works wherever you scroll.</h2>
+      <p class="sec-sub fi d2">Sortd connects to the platforms where you actually discover things — not just the ones that are easy to build for.</p>
+    </div>
+
+    <div class="plat-grid">
+      <div class="plat-card fi" style="--pc:var(--yt)">
+        <div class="plat-icon" style="background:#fff0f0">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FF0000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.95C5.12 20 12 20 12 20s6.88 0 8.59-.47a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+        </div>
+        <div class="plat-name">YouTube</div>
+        <p class="plat-desc">Save Shorts, tutorials, and deep-dives. Full transcripts extracted — summaries generated instantly.</p>
+        <div class="plat-tag"><span class="plat-tag-dot" style="background:var(--yt)"></span>Cooking · Fitness · Finance</div>
+      </div>
+
+      <div class="plat-card fi d1" style="--pc:var(--ig)">
+        <div class="plat-icon" style="background:#fff0f5">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#E1306C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+        </div>
+        <div class="plat-name">Instagram</div>
+        <p class="plat-desc">Capture Reels before they disappear. Style inspo, travel content, recipes — all preserved and searchable.</p>
+        <div class="plat-tag"><span class="plat-tag-dot" style="background:var(--ig)"></span>Style · Travel · Food</div>
+      </div>
+
+      <div class="plat-card fi d2" style="--pc:var(--tt)">
+        <div class="plat-icon" style="background:#f0feff">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#69C9D0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/></svg>
+        </div>
+        <div class="plat-name">TikTok</div>
+        <p class="plat-desc">Save business tips, life hacks, and tutorials. Never lose a "bookmark this" moment to the FYP scroll.</p>
+        <div class="plat-tag"><span class="plat-tag-dot" style="background:var(--tt)"></span>Business · Life hacks · DIY</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── AI SHOWCASE ──────────── -->
+<section class="ai-sec" id="ai">
+  <div class="wrap ai-grid">
+
+    <!-- mock note -->
+    <div class="fi">
+      <div class="mock-card">
+        <div class="mock-head">
+          <div class="mock-back">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+          </div>
+          <div class="mock-acts">
+            <span class="mock-star"><svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span style="display:flex;align-items:center;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></span>
+            <span class="mock-edit">Edit</span>
+          </div>
+        </div>
+        <div class="mock-body">
+          <div class="mock-src-pill">youtube</div>
+          <div class="mock-title">How I Built a $10K/mo SaaS in 90 Days</div>
+          <div class="mock-ai">
+            <div class="mock-ai-badge"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg> AI Summary</div>
+            <div class="mock-ai-text">The creator built a B2B SaaS by focusing on a single pain point in recruitment automation. Key decisions: no-code MVP in week 1, first paid customer by week 3, focus on annual contracts over MRR. Reached $10K MRR in month 3 by doubling down on LinkedIn outbound and ignoring feature requests.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- copy -->
+    <div class="ai-copy fi d1">
+      <div class="sec-lbl">AI-Powered</div>
+      <h2 class="sec-h">The AI reads it.<br>You just save it.</h2>
+      <p class="sec-sub">Sortd uses Whisper for transcription and Gemini for summarization. You get the key insights — not a wall of transcript text.</p>
+
+      <ul class="ai-list">
+        <li class="ai-item">
+          <div class="ai-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(180,165,235,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg></div>
+          <div><strong>Whisper Transcription</strong>Every word from the video, accurately captured and stored alongside the summary.</div>
+        </li>
+        <li class="ai-item">
+          <div class="ai-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(180,165,235,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg></div>
+          <div><strong>Gemini Summarization</strong>Key ideas extracted in 3–5 sentences. No fluff, no filler — just what matters.</div>
+        </li>
+        <li class="ai-item">
+          <div class="ai-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(180,165,235,.95)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="rgba(180,165,235,.95)"/></svg></div>
+          <div><strong>Auto-Categorization</strong>Content routed to the right list based on what it's actually about — no tagging needed.</div>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<!-- ──────────── CTA ───────────────────── -->
+<section class="cta-sec" id="cta">
+  <div class="wrap">
+    <div class="cta-inner">
+      <h2 class="cta-h fi">Start capturing smarter.</h2>
+      <p class="cta-sub fi d1">Free to use. No account required. Works on any device.</p>
+      <div class="cta-acts">
+        <a href="/" class="btn-cta fi d2">Open Sortd →</a>
+        <div class="pwa-hint fi d3">
+          <div class="pwa-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </div>
+          Install as an app on your phone
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── FOOTER ───────────────── -->
+<footer>
+  <div class="wrap">
+    <div class="foot-row">
+      <div class="foot-brand">
+        <span class="wm">Sortd</span>
+        <span class="foot-tag">Your AI-powered save button for the internet</span>
+      </div>
+      <div class="foot-links">
+        <a href="#" class="foot-link">Privacy</a>
+        <a href="#" class="foot-link">About</a>
+      </div>
+    </div>
+    <div class="foot-copy">Built with <svg width="12" height="12" viewBox="0 0 24 24" fill="#ff6b6b" stroke="#ff6b6b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-1px;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> at a hackathon</div>
+  </div>
+</footer>
+
+<script>
+// sticky nav shadow
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 20);
+}, { passive: true });
+
+// fade-in on scroll
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
+
+document.querySelectorAll('.fi').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

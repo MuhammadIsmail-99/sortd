@@ -27,7 +27,8 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'https://sortd-client.vercel.app',
-    /\.vercel\.app$/ // Allow all Vercel preview deployments
+    'https://sortd-frontend.vercel.app',
+    /.*\.vercel\.app$/ // Allow ANY Vercel deployment
   ],
   credentials: true
 }));

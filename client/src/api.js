@@ -1,6 +1,7 @@
 import { supabase } from './contexts/AuthContext';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:3001') + '/api';
+console.log('🔗 API Base set to:', API_BASE);
 
 async function getAuthHeaders() {
   const { data: { session } } = await supabase.auth.getSession();

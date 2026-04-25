@@ -19,7 +19,7 @@ export default function Signup() {
     try {
       const { error } = await signUp({ email, password });
       if (error) throw error;
-      alert('Signup successful! Please check your email or sign in.');
+      alert('Signup successful! You can now sign in.');
       navigate('/login');
     } catch (err) {
       setError(err.message);

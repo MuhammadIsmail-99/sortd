@@ -18,6 +18,9 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// Trust proxy for Railway
+app.set('trust proxy', 1);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -31,8 +34,13 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+const tempDir = path.resolve('temp');
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
+}
+
 // Multer for image uploads
-const upload = multer({ dest: 'temp/' });
+const upload = multer({ dest: tempDir });
 
 // Routes
 
@@ -219,13 +227,9 @@ async function start() {
       console.log(`🚀 Sortd Backend running at http://localhost:${port}`);
     });
 
-    // Cleanup temp files on startup
-    const tempDir = path.resolve('temp');
-    if (fs.existsSync(tempDir)) {
-      const files = fs.readdirSync(tempDir);
-      files.forEach(file => fs.unlinkSync(path.join(tempDir, file)));
-    } else {
-      fs.mkdirSync(tempDir);
+    // Ensure temp directory exists
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
     
     // Periodically clean orphaned temp files

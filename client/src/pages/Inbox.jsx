@@ -1,16 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../api';
 import NoteCard from '../components/NoteCard';
-import { Search, Inbox as InboxIcon, Loader2 } from 'lucide-react';
-import { useSSE } from '../hooks/useSSE';
 import ProcessingOverlay from '../components/ProcessingOverlay';
+import ManageListsSheet from '../components/ManageListsSheet';
+import { FolderIcon } from '../components/icons';
+import { useSSE } from '../hooks/useSSE';
+import { Search, Filter, Loader2, Inbox as InboxIcon } from 'lucide-react';
+
+const PLACEHOLDER_AVATAR = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sortd';
+const PINNED_KEY = 'sortd_pinned_lists';
+
+function getPinnedIds() {
+  try {
+    const s = localStorage.getItem(PINNED_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
 
 export default function Inbox() {
-  const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  // ── existing data state ───────────────────────────────
+  const [notes, setNotes]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
   const [activeJobs, setActiveJobs] = useState([]);
 
+  // ── new UI state ──────────────────────────────────────
+  const [lists, setLists]             = useState([]);
+  const [pinnedIds, setPinnedIds]     = useState(getPinnedIds);
+  const [isManaging, setIsManaging]   = useState(false);
+  const [showSearch, setShowSearch]   = useState(false);
+  const searchRef                     = useRef(null);
+
+  // ── data fetching ─────────────────────────────────────
   const fetchNotes = async () => {
     try {
       const data = await api.getNotes({ search });
@@ -22,149 +43,218 @@ export default function Inbox() {
     }
   };
 
-  useEffect(() => {
-    fetchNotes();
-  }, [search]);
+  const fetchLists = async () => {
+    try { setLists(await api.getLists()); }
+    catch (err) { console.error('Failed to fetch lists'); }
+  };
 
-  // Handle SSE events via callback to avoid infinite re-render loops
+  useEffect(() => { fetchNotes(); }, [search]);
+  useEffect(() => { fetchLists(); }, []);
+
+  // ── toggle starred on a note ──────────────────────────
+  const handleToggleFavorite = async (noteId) => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    try {
+      const updated = await api.updateNote(noteId, { starred: !note.starred });
+      setNotes(prev => prev.map(n => n.id === noteId ? updated : n));
+    } catch (err) {
+      console.error('Failed to toggle favourite');
+    }
+  };
+
+  // ── manage which lists appear in the folder grid ──────
+  const handleToggleListInInbox = (listId) => {
+    const current    = pinnedIds ?? lists.map(l => l.id);
+    const newPinned  = current.includes(listId)
+      ? current.filter(id => id !== listId)
+      : [...current, listId];
+    setPinnedIds(newPinned);
+    localStorage.setItem(PINNED_KEY, JSON.stringify(newPinned));
+  };
+
+  const listsWithVisibility = lists.map(l => ({
+    ...l,
+    showInInbox: pinnedIds === null ? true : pinnedIds.includes(l.id),
+  }));
+  const visibleLists = listsWithVisibility.filter(l => l.showInInbox).slice(0, 6);
+
+  // ── SSE job lifecycle (unchanged logic) ───────────────
   const handleEvent = useCallback((event) => {
     if (event.type === 'job_done') {
-      // Add new note to the top of the list
       setNotes(prev => [event.data.note, ...prev]);
     }
-
-    // Track active jobs for the overlay
     if (event.type === 'job_queued' || event.type === 'job_started') {
       setActiveJobs(prev => {
-        // Update if exists, otherwise add
         const exists = prev.find(j => j.data?.jobId === event.data?.jobId);
-        if (exists) {
-          return prev.map(j => j.data?.jobId === event.data?.jobId ? event : j);
-        }
+        if (exists) return prev.map(j => j.data?.jobId === event.data?.jobId ? event : j);
         return [...prev, event];
       });
     } else if (event.type === 'job_done' || event.type === 'job_failed') {
-      // Mark as finished but keep for a few seconds to show status
-      setActiveJobs(prev => prev.map(j => (j.data?.jobId || j.jobId) === (event.data?.jobId || event.jobId) ? event : j));
-      
+      setActiveJobs(prev =>
+        prev.map(j =>
+          (j.data?.jobId || j.jobId) === (event.data?.jobId || event.jobId) ? event : j
+        )
+      );
       setTimeout(() => {
-        setActiveJobs(prev => prev.filter(j => (j.data?.jobId || j.jobId) !== (event.data?.jobId || event.jobId)));
+        setActiveJobs(prev =>
+          prev.filter(j =>
+            (j.data?.jobId || j.jobId) !== (event.data?.jobId || event.jobId)
+          )
+        );
       }, 5000);
     }
   }, []);
 
   useSSE(handleEvent);
 
+  // ── search toggle helper ──────────────────────────────
+  const toggleSearch = () => {
+    setShowSearch(s => {
+      if (!s) setTimeout(() => searchRef.current?.focus(), 50);
+      return !s;
+    });
+  };
+
   return (
-    <div className="container inbox-page">
+    <div style={{ padding: '48px 24px 32px', maxWidth: '680px', margin: '0 auto' }}>
       <ProcessingOverlay jobs={activeJobs} />
-      
-      <h1 className="page-title">Inbox</h1>
-      
-      <div className="search-container">
-        <Search className="search-icon" size={20} />
-        <input
-          type="text"
-          placeholder="Search your captures..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="search-input"
-        />
+
+      {/* ── Top bar ──────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <img
+            src={PLACEHOLDER_AVATAR}
+            alt="avatar"
+            className="w-10 h-10 rounded-full"
+            style={{ border: '2px solid white', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+          />
+          <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(0,0,0,0.1)' }} />
+          <span style={{ fontSize: '14px', fontWeight: 800, opacity: 0.2, textTransform: 'uppercase', letterSpacing: '0.15em' }}>
+            Sortd
+          </span>
+        </div>
+
+        <button
+          onClick={toggleSearch}
+          className="p-2 rounded-full neo-shadow transition-all active:scale-95"
+          style={{ background: 'white', border: '1px solid rgba(0,0,0,0.05)' }}
+        >
+          <Search size={20} style={{ color: 'rgba(0,0,0,0.3)' }} />
+        </button>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <Loader2 className="spinner" size={32} />
-        </div>
-      ) : notes.length > 0 ? (
-        <div className="notes-grid">
-          {notes.map(note => (
-            <NoteCard key={note.id} note={note} />
-          ))}
-        </div>
-      ) : (
-        <div className="empty-state">
-          <div className="empty-icon-circle">
-            <InboxIcon size={48} />
-          </div>
-          <h2>Your inbox is empty</h2>
-          <p>Paste a URL or upload a screenshot in the Add tab to get started.</p>
+      {/* ── Search input (toggleable) ─────────────────── */}
+      {showSearch && (
+        <div style={{ marginBottom: '24px' }}>
+          <input
+            ref={searchRef}
+            type="text"
+            placeholder="Search your captures..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="input-flat"
+          />
         </div>
       )}
 
-      <style>{`
-        .inbox-page {
-          padding-top: var(--space-24);
-        }
-        .search-container {
-          position: relative;
-          margin-bottom: var(--space-32);
-        }
-        .search-icon {
-          position: absolute;
-          left: var(--space-16);
-          top: 50%;
-          transform: translateY(-50%);
-          color: var(--color-text-muted);
-        }
-        .search-input {
-          padding: var(--space-12) var(--space-16) var(--space-12) 48px;
-          border-radius: var(--radius-pill);
-          border: 1px solid var(--color-border);
-          background: var(--color-bg-warm);
-          font-weight: 500;
-          transition: all 0.2s ease;
-        }
-        .search-input:focus {
-          outline: none;
-          background: white;
-          border-color: var(--color-accent);
-          box-shadow: 0 0 0 3px rgba(0, 117, 222, 0.1);
-        }
-        .notes-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: var(--space-24);
-          padding-bottom: var(--space-48);
-        }
-        @media (max-width: 600px) {
-          .notes-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-        .loading-state, .empty-state {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 300px;
-          text-align: center;
-        }
-        .empty-icon-circle {
-          width: 96px;
-          height: 96px;
-          background: var(--color-bg-warm);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: var(--space-20);
-          color: var(--color-text-muted);
-        }
-        .empty-state h2 {
-          font-size: 20px;
-          margin-bottom: var(--space-8);
-        }
-        .empty-state p {
-          color: var(--color-text-secondary);
-          max-width: 300px;
-        }
-        .spinner {
-          animation: spin 1s linear infinite;
-          color: var(--color-accent);
-        }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+      {/* ── Folder grid ──────────────────────────────── */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px', color: '#1a1d1f' }}>
+          Your Lists
+        </h2>
+        <button
+          onClick={() => setIsManaging(true)}
+          className="flex items-center gap-1 transition-colors"
+          style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(0,0,0,0.3)' }}
+        >
+          Manage <Filter size={12} />
+        </button>
+      </div>
+
+      {visibleLists.length > 0 ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '12px',
+            marginBottom: '32px',
+          }}
+        >
+          {visibleLists.map(l => (
+            <div
+              key={l.id}
+              className="folder-card flex flex-col gap-3 relative overflow-hidden"
+              style={{ background: l.color || '#a2d2ff' }}
+            >
+              <span
+                className="absolute top-3 right-3 font-bold"
+                style={{ fontSize: '10px', color: 'rgba(255,255,255,0.6)' }}
+              >
+                {l.note_count ?? 0}
+              </span>
+              <FolderIcon color="rgba(255,255,255,0.4)" />
+              <span style={{ fontSize: '11px', fontWeight: 800, color: 'white', letterSpacing: '-0.2px' }}>
+                {l.name}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div
+          className="text-center mb-8"
+          style={{
+            border: '1px dashed rgba(0,0,0,0.12)',
+            borderRadius: '16px',
+            padding: '24px',
+            background: 'rgba(255,255,255,0.5)',
+          }}
+        >
+          <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(0,0,0,0.3)' }}>
+            No lists selected
+          </p>
+          <button
+            onClick={() => setIsManaging(true)}
+            style={{ fontSize: '12px', fontWeight: 700, color: '#33b1ff', marginTop: '4px' }}
+          >
+            Configure
+          </button>
+        </div>
+      )}
+
+      {/* ── Recent Clips ──────────────────────────────── */}
+      <h2 style={{ fontSize: '22px', fontWeight: 800, letterSpacing: '-0.3px', color: '#1a1d1f', marginBottom: '16px' }}>
+        Recent Clips
+      </h2>
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+          <Loader2 size={32} className="spinner" style={{ color: '#33b1ff' }} />
+        </div>
+      ) : notes.length > 0 ? (
+        notes.map(note => (
+          <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
+        ))
+      ) : (
+        <div
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', opacity: 0.25 }}
+        >
+          <InboxIcon size={56} strokeWidth={1} />
+          <p style={{ marginTop: '16px', fontWeight: 700 }}>Your inbox is empty</p>
+          <p style={{ fontSize: '14px', marginTop: '4px', textAlign: 'center', maxWidth: '260px', color: '#6f767e' }}>
+            Paste a URL or upload a screenshot in the Add tab
+          </p>
+        </div>
+      )}
+
+      {/* ── Manage Lists sheet ────────────────────────── */}
+      {isManaging && (
+        <ManageListsSheet
+          lists={listsWithVisibility}
+          onToggle={handleToggleListInInbox}
+          onClose={() => setIsManaging(false)}
+        />
+      )}
     </div>
   );
 }

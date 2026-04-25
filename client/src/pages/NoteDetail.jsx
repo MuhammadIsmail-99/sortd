@@ -1,25 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { ArrowLeft, Star, Trash2, ExternalLink, Tag, Folder, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Star, Trash2, ExternalLink, Tag, Folder, Loader2, Save, Sparkles, ChevronDown } from 'lucide-react';
 import TagPill from '../components/TagPill';
 
 export default function NoteDetail() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [note, setNote] = useState(null);
-  const [lists, setLists] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState(false);
+  const { id }         = useParams();
+  const navigate       = useNavigate();
+  const [note, setNote]           = useState(null);
+  const [lists, setLists]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [editing, setEditing]     = useState(false);
   const [editedNote, setEditedNote] = useState(null);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [noteData, listData] = await Promise.all([
-          api.getNote(id),
-          api.getLists()
-        ]);
+        const [noteData, listData] = await Promise.all([api.getNote(id), api.getLists()]);
         setNote(noteData);
         setEditedNote(noteData);
         setLists(listData);
@@ -36,20 +34,15 @@ export default function NoteDetail() {
     try {
       const updated = await api.updateNote(id, { starred: !note.starred });
       setNote(updated);
-    } catch (err) {
-      alert('Update failed');
-    }
+    } catch { alert('Update failed'); }
   };
 
   const handleDelete = async () => {
-    if (confirm('Delete this note?')) {
-      try {
-        await api.deleteNote(id);
-        navigate('/');
-      } catch (err) {
-        alert('Delete failed');
-      }
-    }
+    if (!confirm('Delete this note?')) return;
+    try {
+      await api.deleteNote(id);
+      navigate('/');
+    } catch { alert('Delete failed'); }
   };
 
   const handleSave = async () => {
@@ -57,203 +50,216 @@ export default function NoteDetail() {
       const updated = await api.updateNote(id, editedNote);
       setNote(updated);
       setEditing(false);
-    } catch (err) {
-      alert('Save failed');
-    }
+    } catch { alert('Save failed'); }
   };
 
-  if (loading) return <div className="container loading-state"><Loader2 className="spinner" size={32} /></div>;
-  if (!note) return <div className="container"><h1>Note not found</h1></div>;
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Loader2 size={32} className="spinner" style={{ color: '#33b1ff' }} />
+      </div>
+    );
+  }
+
+  if (!note) {
+    return (
+      <div style={{ padding: '48px 24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 800 }}>Note not found</h1>
+      </div>
+    );
+  }
 
   return (
-    <div className="container note-detail-page">
-      <div className="header-nav">
-        <button className="back-btn" onClick={() => navigate(-1)}>
-          <ArrowLeft size={24} />
+    <div style={{ padding: '24px 24px 80px', maxWidth: '680px', margin: '0 auto', background: '#f5f7f9', minHeight: '100vh' }}>
+
+      {/* ── Top navigation ──────────────────────────── */}
+      <div className="flex items-center justify-between" style={{ paddingBottom: '24px' }}>
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 transition-opacity"
+          style={{ color: 'rgba(0,0,0,0.35)', fontWeight: 700, fontSize: '14px' }}
+        >
+          <ArrowLeft size={20} /> Back
         </button>
-        <div className="nav-actions">
-          <button onClick={handleToggleStar} className={note.starred ? 'starred' : ''}>
-            <Star size={24} fill={note.starred ? 'var(--color-accent)' : 'none'} color={note.starred ? 'var(--color-accent)' : 'currentColor'} />
+
+        <div className="flex items-center" style={{ gap: '12px' }}>
+          <button
+            onClick={handleToggleStar}
+            style={{ color: note.starred ? '#f59e0b' : 'rgba(0,0,0,0.25)', transition: 'all 0.2s' }}
+          >
+            <Star size={22} fill={note.starred ? 'currentColor' : 'none'} strokeWidth={2} />
           </button>
-          <button onClick={handleDelete}>
-            <Trash2 size={24} />
+          <button onClick={handleDelete} style={{ color: 'rgba(0,0,0,0.25)', transition: 'all 0.2s' }}>
+            <Trash2 size={22} />
           </button>
           {editing ? (
-            <button className="btn-primary flex items-center gap-8" onClick={handleSave}>
-              <Save size={18} /> Save
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 btn-primary"
+              style={{ padding: '8px 18px', fontSize: '13px' }}
+            >
+              <Save size={15} /> Save
             </button>
           ) : (
-            <button className="btn-secondary" onClick={() => setEditing(true)}>Edit</button>
+            <button
+              onClick={() => setEditing(true)}
+              style={{
+                padding: '8px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: 700,
+                background: 'rgba(0,0,0,0.06)', color: '#1a1d1f',
+              }}
+            >
+              Edit
+            </button>
           )}
         </div>
       </div>
 
-      <div className="note-hero">
-        <div className="hero-content">
-          <div className="source-meta">
-            <span className="source-badge">{note.source_platform}</span>
-            {note.source_url && (
-              <a href={note.source_url} target="_blank" rel="noopener noreferrer" className="source-link">
-                Original Source <ExternalLink size={14} />
-              </a>
-            )}
-          </div>
-          
-          {editing ? (
-            <input 
-              className="title-input"
-              value={editedNote.title}
-              onChange={e => setEditedNote({...editedNote, title: e.target.value})}
-            />
-          ) : (
-            <h1 className="note-title">{note.title}</h1>
+      {/* ── Source + title ───────────────────────────── */}
+      <div style={{ marginBottom: '24px' }}>
+        <div className="flex items-center" style={{ gap: '12px', marginBottom: '12px' }}>
+          {note.source_platform && (
+            <span
+              style={{
+                fontSize: '11px', fontWeight: 800, textTransform: 'capitalize',
+                background: 'rgba(0,0,0,0.06)', color: '#1a1d1f',
+                padding: '4px 10px', borderRadius: '999px', letterSpacing: '0.05em',
+              }}
+            >
+              {note.source_platform}
+            </span>
+          )}
+          {note.source_url && (
+            <a
+              href={note.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1"
+              style={{ fontSize: '13px', fontWeight: 700, color: '#33b1ff' }}
+            >
+              Open Original <ExternalLink size={13} />
+            </a>
           )}
         </div>
+
+        {editing ? (
+          <input
+            className="input-flat"
+            style={{ fontSize: '26px', fontWeight: 800, letterSpacing: '-0.5px', padding: '12px 16px' }}
+            value={editedNote.title}
+            onChange={e => setEditedNote({ ...editedNote, title: e.target.value })}
+          />
+        ) : (
+          <h1 style={{ fontSize: '26px', fontWeight: 800, lineHeight: 1.25, letterSpacing: '-0.5px', color: '#1a1d1f' }}>
+            {note.title}
+          </h1>
+        )}
       </div>
 
-      <div className="note-organization">
-        <div className="org-item">
-          <Folder size={18} />
-          <select 
-            value={editing ? editedNote.list_id : note.list_id} 
+      {/* ── Organisation row ─────────────────────────── */}
+      <div
+        className="flex flex-wrap"
+        style={{ gap: '20px', padding: '16px', background: 'white', borderRadius: '20px', marginBottom: '24px' }}
+      >
+        <div className="flex items-center" style={{ gap: '8px', color: '#6f767e' }}>
+          <Folder size={16} />
+          <select
+            value={editing ? editedNote.list_id : note.list_id}
             disabled={!editing}
-            onChange={e => setEditedNote({...editedNote, list_id: e.target.value})}
+            onChange={e => setEditedNote({ ...editedNote, list_id: e.target.value })}
+            style={{
+              border: 'none', background: 'transparent', fontWeight: 700,
+              fontSize: '14px', color: '#1a1d1f', cursor: editing ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+            }}
           >
             {lists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
           </select>
         </div>
-        <div className="org-item">
-          <Tag size={18} />
-          <div className="tags-list">
-            {note.tags?.map(tag => <TagPill key={tag} name={tag} />)}
-          </div>
+
+        <div className="flex items-center flex-wrap" style={{ gap: '8px', color: '#6f767e' }}>
+          <Tag size={16} />
+          {note.tags?.map(tag => <TagPill key={tag} name={tag} />)}
+          {(!note.tags || note.tags.length === 0) && (
+            <span style={{ fontSize: '13px', color: 'rgba(0,0,0,0.3)' }}>No tags</span>
+          )}
         </div>
       </div>
 
-      <div className="note-body">
-        {editing ? (
-          <textarea 
-            className="content-input"
-            value={editedNote.content}
-            onChange={e => setEditedNote({...editedNote, content: e.target.value})}
-            rows={10}
-          />
-        ) : (
-          <div className="content-text">{note.content}</div>
-        )}
-        
-        {note.transcription && (
-          <div className="transcription-section">
-            <h3>Transcription</h3>
-            <p>{note.transcription}</p>
+      {/* ── AI Summary card (dark) ───────────────────── */}
+      {note.content && (
+        <div
+          style={{
+            background: '#1a1a1a', borderRadius: '20px',
+            padding: '20px', marginBottom: '20px',
+          }}
+        >
+          <div className="flex items-center" style={{ gap: '8px', marginBottom: '12px' }}>
+            <span
+              style={{
+                fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
+                background: '#6e56cf', color: 'white', padding: '4px 10px', borderRadius: '999px',
+              }}
+            >
+              AI Summary
+            </span>
+            <Sparkles size={14} style={{ color: '#6e56cf' }} />
           </div>
-        )}
-      </div>
 
-      <style>{`
-        .note-detail-page {
-          padding-bottom: var(--space-64);
-        }
-        .header-nav {
-          display: flex;
-          justify-content: space-between;
-          padding: var(--space-20) 0;
-          align-items: center;
-        }
-        .nav-actions {
-          display: flex;
-          gap: var(--space-20);
-          align-items: center;
-        }
-        .note-hero {
-          margin-bottom: var(--space-32);
-        }
-        .source-meta {
-          display: flex;
-          gap: var(--space-16);
-          margin-bottom: var(--space-12);
-          align-items: center;
-        }
-        .source-link {
-          font-size: 14px;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          font-weight: 600;
-        }
-        .note-title {
-          font-size: 32px;
-          line-height: 1.2;
-          letter-spacing: -1px;
-        }
-        .title-input {
-          font-size: 32px;
-          font-weight: 700;
-          border: none;
-          border-bottom: 2px solid var(--color-accent);
-          width: 100%;
-          outline: none;
-        }
-        .note-organization {
-          display: flex;
-          flex-wrap: wrap;
-          gap: var(--space-24);
-          padding: var(--space-16);
-          background: var(--color-bg-warm);
-          border-radius: var(--radius-card);
-          margin-bottom: var(--space-32);
-        }
-        .org-item {
-          display: flex;
-          align-items: center;
-          gap: var(--space-8);
-          color: var(--color-text-secondary);
-        }
-        .org-item select {
-          border: none;
-          background: transparent;
-          font-weight: 600;
-          font-size: 14px;
-          color: var(--color-text);
-          cursor: pointer;
-        }
-        .tags-list {
-          display: flex;
-          gap: var(--space-8);
-        }
-        .note-body {
-          font-size: 18px;
-          line-height: 1.6;
-          color: var(--color-text);
-        }
-        .content-input {
-          width: 100%;
-          padding: var(--space-16);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-card);
-          font-size: 18px;
-          line-height: 1.6;
-        }
-        .transcription-section {
-          margin-top: var(--space-48);
-          padding-top: var(--space-24);
-          border-top: 1px solid var(--color-border);
-        }
-        .transcription-section h3 {
-          font-size: 14px;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          color: var(--color-text-muted);
-          margin-bottom: var(--space-12);
-        }
-        .transcription-section p {
-          font-size: 14px;
-          color: var(--color-text-secondary);
-          white-space: pre-wrap;
-        }
-        .spinner { animation: spin 1s linear infinite; color: var(--color-accent); }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
+          {editing ? (
+            <textarea
+              value={editedNote.content}
+              onChange={e => setEditedNote({ ...editedNote, content: e.target.value })}
+              rows={8}
+              style={{
+                width: '100%', background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.12)', borderRadius: '12px',
+                padding: '12px 14px', color: 'rgba(255,255,255,0.9)',
+                fontSize: '15px', lineHeight: 1.6, resize: 'vertical',
+                fontFamily: 'inherit',
+              }}
+            />
+          ) : (
+            <p style={{ fontSize: '15px', lineHeight: 1.7, color: 'rgba(255,255,255,0.82)', whiteSpace: 'pre-wrap' }}>
+              {note.content}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* ── Full transcript (collapsible) ────────────── */}
+      {note.raw_text && (
+        <div
+          style={{
+            background: 'white', borderRadius: '20px',
+            overflow: 'hidden', marginBottom: '20px',
+          }}
+        >
+          <button
+            onClick={() => setShowTranscript(s => !s)}
+            className="w-full flex items-center justify-between transition-all"
+            style={{ padding: '16px 20px', fontWeight: 700 }}
+          >
+            <span style={{ fontSize: '12px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(0,0,0,0.4)' }}>
+              Full Transcript
+            </span>
+            <ChevronDown
+              size={18}
+              style={{
+                color: 'rgba(0,0,0,0.3)',
+                transform: showTranscript ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s',
+              }}
+            />
+          </button>
+          {showTranscript && (
+            <div style={{ padding: '0 20px 20px', borderTop: '1px solid #efefef' }}>
+              <p style={{ fontSize: '14px', lineHeight: 1.7, color: '#6f767e', marginTop: '16px', whiteSpace: 'pre-wrap' }}>
+                {note.raw_text}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

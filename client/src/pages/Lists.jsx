@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import ListCard from '../components/ListCard';
-import { Plus, Loader2, Folder } from 'lucide-react';
+import { FolderIcon } from '../components/icons';
+import { Plus, Loader2, X } from 'lucide-react';
+
+const PALETTE = ['#a2d2ff', '#88e1ff', '#bde0fe', '#c8b6ff', '#ffc8dd', '#b9fbc0', '#ffcfd2', '#ffd6a5'];
 
 export default function Lists() {
-  const [lists, setLists] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [lists, setLists]         = useState([]);
+  const [loading, setLoading]     = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [newList, setNewList] = useState({ name: '', emoji: 'folder', color: '#0075de' });
+  const [newList, setNewList]     = useState({ name: '', color: '#a2d2ff' });
+  const navigate                  = useNavigate();
 
   const fetchLists = async () => {
     try {
@@ -20,9 +24,7 @@ export default function Lists() {
     }
   };
 
-  useEffect(() => {
-    fetchLists();
-  }, []);
+  useEffect(() => { fetchLists(); }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -30,154 +32,168 @@ export default function Lists() {
       const created = await api.createList(newList);
       setLists(prev => [...prev, { ...created, note_count: 0 }]);
       setShowCreate(false);
-      setNewList({ name: '', emoji: 'folder', color: '#0075de' });
+      setNewList({ name: '', color: '#a2d2ff' });
     } catch (err) {
       alert('Failed to create list');
     }
   };
 
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+        <Loader2 size={32} className="spinner" style={{ color: '#33b1ff' }} />
+      </div>
+    );
+  }
+
   return (
-    <div className="container lists-page">
-      <div className="header-row">
-        <h1 className="page-title">Lists</h1>
-        <button className="btn-primary flex items-center gap-8" onClick={() => setShowCreate(true)}>
-          <Plus size={18} /> New List
+    <div style={{ padding: '48px 24px 32px', maxWidth: '680px', margin: '0 auto' }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <h1 style={{ fontSize: '28px', fontWeight: 800, letterSpacing: '-0.5px', color: '#1a1d1f' }}>
+          Collections
+        </h1>
+        <button
+          onClick={() => setShowCreate(true)}
+          className="flex items-center justify-center neo-shadow transition-all active:scale-95"
+          style={{
+            width: '44px', height: '44px',
+            borderRadius: '50%',
+            background: 'white',
+            border: '1px solid rgba(0,0,0,0.05)',
+          }}
+        >
+          <Plus size={20} style={{ color: '#1a1d1f' }} />
         </button>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <Loader2 className="spinner" size={32} />
-        </div>
-      ) : (
-        <div className="lists-grid">
-          {lists.map(list => (
-            <ListCard key={list.id} list={list} />
-          ))}
-          <div className="card create-list-card" onClick={() => setShowCreate(true)}>
-            <Plus size={32} color="var(--color-text-muted)" />
-            <span>Create New</span>
+      {/* 2-column folder grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+        {lists.map(l => (
+          <div
+            key={l.id}
+            onClick={() => navigate(`/lists/${l.id}`)}
+            className="folder-card relative overflow-hidden flex flex-col justify-between"
+            style={{
+              background: l.color || '#a2d2ff',
+              aspectRatio: '1',
+              padding: '20px',
+            }}
+          >
+            <span
+              className="absolute font-bold"
+              style={{ top: '20px', right: '20px', fontSize: '12px', color: 'rgba(255,255,255,0.65)' }}
+            >
+              {l.note_count ?? 0}
+            </span>
+            <FolderIcon color="white" />
+            <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'white', letterSpacing: '-0.3px', lineHeight: 1.2 }}>
+              {l.name}
+            </h3>
           </div>
-        </div>
-      )}
+        ))}
 
+        {/* Create new card */}
+        <button
+          onClick={() => setShowCreate(true)}
+          className="folder-card flex flex-col items-center justify-center gap-2"
+          style={{
+            background: '#f5f7f9',
+            aspectRatio: '1',
+            padding: '20px',
+            border: '2px dashed rgba(0,0,0,0.1)',
+          }}
+        >
+          <Plus size={32} style={{ color: 'rgba(0,0,0,0.2)' }} />
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'rgba(0,0,0,0.3)' }}>Create New</span>
+        </button>
+      </div>
+
+      {/* Create list bottom sheet */}
       {showCreate && (
-        <div className="modal-overlay" onClick={() => setShowCreate(false)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h2>Create New List</h2>
-            <form onSubmit={handleCreate}>
-              <div className="form-group">
-                <label>List Name</label>
-                <input
-                  type="text"
-                  required
-                  value={newList.name}
-                  onChange={e => setNewList({ ...newList, name: e.target.value })}
-                  placeholder="e.g. Recipes"
-                  autoFocus
-                />
-              </div>
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Icon</label>
-                  <div className="icon-preview">
-                    <Folder color={newList.color} size={24} />
-                    <span className="text-muted text-sm">Default Folder Icon</span>
-                  </div>
+        <div
+          className="fixed inset-0 z-[200] flex items-end justify-center modal-overlay"
+          onClick={() => setShowCreate(false)}
+        >
+          <div
+            className="bg-white w-full max-w-2xl neo-shadow bottom-sheet-anim"
+            style={{ borderRadius: '40px 40px 0 0', padding: '16px 24px 0' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div
+              className="mx-auto mb-6"
+              style={{ width: '48px', height: '6px', borderRadius: '999px', background: 'rgba(0,0,0,0.05)' }}
+            />
+
+            {/* Sheet header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.4px', color: '#1a1d1f' }}>
+                New Collection
+              </h3>
+              <button
+                onClick={() => setShowCreate(false)}
+                className="p-2 rounded-full"
+                style={{ background: '#f5f7f9' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <input
+                type="text"
+                required
+                autoFocus
+                className="input-flat"
+                placeholder="Collection name..."
+                value={newList.name}
+                onChange={e => setNewList({ ...newList, name: e.target.value })}
+              />
+
+              {/* Color picker */}
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, color: 'rgba(0,0,0,0.4)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Colour
+                </p>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  {PALETTE.map(c => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setNewList({ ...newList, color: c })}
+                      style={{
+                        width: '36px', height: '36px',
+                        borderRadius: '10px',
+                        background: c,
+                        border: newList.color === c ? '3px solid #1a1d1f' : '3px solid transparent',
+                        transition: 'transform 0.15s',
+                        transform: newList.color === c ? 'scale(1.15)' : 'scale(1)',
+                      }}
+                    />
+                  ))}
                 </div>
-                <div className="form-group">
-                  <label>Color</label>
-                  <input
-                    type="color"
-                    value={newList.color}
-                    onChange={e => setNewList({ ...newList, color: e.target.value })}
-                  />
-                </div>
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
-                <button type="submit" className="btn-primary">Create List</button>
+
+              <div style={{ display: 'flex', gap: '12px', paddingBottom: '32px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreate(false)}
+                  style={{
+                    flex: 1, padding: '16px', borderRadius: '16px',
+                    fontWeight: 700, fontSize: '14px', background: '#f5f7f9',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" style={{ flex: 1, padding: '16px', fontSize: '14px' }}>
+                  Create
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
-      <style>{`
-        .header-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .lists-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-          gap: var(--space-20);
-        }
-        .create-list-card {
-          padding: var(--space-20);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: var(--space-8);
-          border-style: dashed;
-          color: var(--color-text-muted);
-          cursor: pointer;
-        }
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 3000;
-          padding: var(--space-16);
-        }
-        .modal-content {
-          background: white;
-          padding: var(--space-32);
-          border-radius: var(--radius-card);
-          width: 100%;
-          max-width: 400px;
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-24);
-        }
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-8);
-          margin-bottom: var(--space-16);
-        }
-        .form-group label {
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--color-text-secondary);
-        }
-        .form-group input[type="text"] {
-          padding: var(--space-12);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-button);
-        }
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: var(--space-16);
-        }
-        .modal-actions {
-          display: flex;
-          justify-content: flex-end;
-          gap: var(--space-12);
-          margin-top: var(--space-8);
-        }
-        .spinner { animation: spin 1s linear infinite; color: var(--color-accent); }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 }

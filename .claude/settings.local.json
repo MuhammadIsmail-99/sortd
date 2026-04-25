@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(js|jsx|json|sql|css|md\\)$\")",
+      "Bash(npm install *)",
+      "Bash(npm ls *)",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:5173 -o /dev/null -w \"%{http_code}\")",
+      "Bash(npx vite *)",
+      "Bash(node -e \"const l = require\\('./node_modules/lucide-react/dist/lucide-react.cjs'\\); const keys = Object.keys\\(l\\); console.log\\(keys.filter\\(k => k.toLowerCase\\(\\).includes\\('you'\\) || k.toLowerCase\\(\\).includes\\('insta'\\) || k.toLowerCase\\(\\).includes\\('brand'\\) || k.toLowerCase\\(\\).includes\\('play'\\)\\).join\\('\\\\n'\\)\\)\")"
+    ]
+  }
+}

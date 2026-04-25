@@ -1,3 +1,9 @@
 {
-  "outputDirectory": "client/dist"
+  "outputDirectory": "client/dist",
+  "rewrites": [
+    { "source": "/landing.html", "destination": "/landing.html" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/favicon_io/(.*)", "destination": "/favicon_io/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

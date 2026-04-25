@@ -15,6 +15,12 @@
   </head>
   <body>
     <script>
+      window.onerror = function(msg, url, line, col, error) {
+        alert("JS ERROR: " + msg + "\nAt: " + line + ":" + col);
+        return false;
+      };
+    </script>
+    <script>
       // Pre-React: redirect unauthenticated users to landing before React loads
       (function () {
         var path = window.location.pathname;

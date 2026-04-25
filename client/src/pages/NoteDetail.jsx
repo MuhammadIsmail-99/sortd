@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../api';
-import { ArrowLeft, Star, Trash2, ExternalLink, Tag, Folder, Loader2, Save, Sparkles, ChevronDown } from 'lucide-react';
-import TagPill from '../components/TagPill';
+import { ArrowLeft, Star, Trash2, ExternalLink, Folder, Loader2, Save, Sparkles, ChevronDown } from 'lucide-react';
 
 export default function NoteDetail() {
   const { id }         = useParams();
@@ -185,6 +184,126 @@ export default function NoteDetail() {
         </div>
       </div>
 
+      <div className="note-body">
+        {editing ? (
+          <textarea 
+            className="content-input"
+            value={editedNote.content}
+            onChange={e => setEditedNote({...editedNote, content: e.target.value})}
+            rows={10}
+          />
+        ) : (
+          <div className="content-text">{note.content}</div>
+        )}
+        
+        {note.transcription && (
+          <div className="transcription-section">
+            <h3>Transcription</h3>
+            <p>{note.transcription}</p>
+          </div>
+        )}
+      </div>
+
+      <style>{`
+        .note-detail-page {
+          padding-bottom: var(--space-64);
+        }
+        .header-nav {
+          display: flex;
+          justify-content: space-between;
+          padding: var(--space-20) 0;
+          align-items: center;
+        }
+        .nav-actions {
+          display: flex;
+          gap: var(--space-20);
+          align-items: center;
+        }
+        .note-hero {
+          margin-bottom: var(--space-32);
+        }
+        .source-meta {
+          display: flex;
+          gap: var(--space-16);
+          margin-bottom: var(--space-12);
+          align-items: center;
+        }
+        .source-link {
+          font-size: 14px;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-weight: 600;
+        }
+        .note-title {
+          font-size: 32px;
+          line-height: 1.2;
+          letter-spacing: -1px;
+        }
+        .title-input {
+          font-size: 32px;
+          font-weight: 700;
+          border: none;
+          border-bottom: 2px solid var(--color-accent);
+          width: 100%;
+          outline: none;
+        }
+        .note-organization {
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--space-24);
+          padding: var(--space-16);
+          background: var(--color-bg-warm);
+          border-radius: var(--radius-card);
+          margin-bottom: var(--space-32);
+        }
+        .org-item {
+          display: flex;
+          align-items: center;
+          gap: var(--space-8);
+          color: var(--color-text-secondary);
+        }
+        .org-item select {
+          border: none;
+          background: transparent;
+          font-weight: 600;
+          font-size: 14px;
+          color: var(--color-text);
+          cursor: pointer;
+        }
+        .note-body {
+          font-size: 18px;
+          line-height: 1.6;
+          color: var(--color-text);
+        }
+        .content-input {
+          width: 100%;
+          padding: var(--space-16);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          font-size: 18px;
+          line-height: 1.6;
+        }
+        .transcription-section {
+          margin-top: var(--space-48);
+          padding-top: var(--space-24);
+          border-top: 1px solid var(--color-border);
+        }
+        .transcription-section h3 {
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: var(--color-text-muted);
+          margin-bottom: var(--space-12);
+        }
+        .transcription-section p {
+          font-size: 14px;
+          color: var(--color-text-secondary);
+          white-space: pre-wrap;
+        }
+        .spinner { animation: spin 1s linear infinite; color: var(--color-accent); }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
       {/* ── AI Summary card (dark) ───────────────────── */}
       {note.content && (
         <div

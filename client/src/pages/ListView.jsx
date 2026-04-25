@@ -96,7 +96,7 @@ export default function ListView() {
         </button>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8 px-1">
         <h2 className="text-[22px] font-extrabold tracking-tight">Saved Clips</h2>
         <span className="text-[12px] font-bold text-black/30 bg-black/5 px-3 py-1 rounded-full">
           {notes.length} notes
@@ -104,7 +104,7 @@ export default function ListView() {
       </div>
 
       {notes.length > 0 ? (
-        <div className="flex flex-col gap-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {notes.map(note => (
             <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
           ))}

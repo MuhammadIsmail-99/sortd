@@ -6,14 +6,14 @@ import AddContentSheet from './components/AddContentSheet';
 import { Loader2, Layers } from 'lucide-react';
 
 // Lazy load pages
-const Inbox       = lazy(() => import('./pages/Inbox'));
-const Lists       = lazy(() => import('./pages/Lists'));
-const ListView    = lazy(() => import('./pages/ListView'));
-const NoteDetail  = lazy(() => import('./pages/NoteDetail'));
-const Settings    = lazy(() => import('./pages/Settings'));
-const Favorites   = lazy(() => import('./pages/Favorites'));
-const Login       = lazy(() => import('./pages/Login'));
-const Signup      = lazy(() => import('./pages/Signup'));
+const Inbox = lazy(() => import('./pages/Inbox'));
+const Lists = lazy(() => import('./pages/Lists'));
+const ListView = lazy(() => import('./pages/ListView'));
+const NoteDetail = lazy(() => import('./pages/NoteDetail'));
+const Settings = lazy(() => import('./pages/Settings'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Walkthrough from './components/Walkthrough';
@@ -28,10 +28,10 @@ function PageLoader() {
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  
+
   if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/login" replace />;
-  
+
   return children;
 }
 
@@ -50,7 +50,7 @@ function Layout() {
           setShowWalkthrough(false);
         }} />
       )}
-      
+
       <main style={{ paddingBottom: '140px' }}>
         <Suspense fallback={<PageLoader />}>
           <Outlet />
@@ -83,7 +83,7 @@ function AppContent() {
             </Suspense>
           )
         } />
-        
+
         <Route path="/login" element={
           user ? <Navigate to="/inbox" replace /> : (
             <Suspense fallback={<PageLoader />}>
@@ -91,7 +91,7 @@ function AppContent() {
             </Suspense>
           )
         } />
-        
+
         <Route path="/signup" element={
           user ? <Navigate to="/inbox" replace /> : (
             <Suspense fallback={<PageLoader />}>

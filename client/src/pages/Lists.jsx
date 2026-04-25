@@ -23,27 +23,27 @@ export default function Lists() {
   }, []);
 
   return (
-    <div className="px-6 pt-12 pb-32 max-w-[680px] mx-auto">
-      <h1 className="text-[28px] font-extrabold tracking-tight mb-8">Collections</h1>
+    <div className="px-6 md:px-12 pt-12 pb-32 w-full max-w-5xl mx-auto">
+      <h1 className="text-[32px] md:text-[42px] font-black tracking-tighter text-[#1a1d1f] mb-8">Collections</h1>
       
       {loading ? (
         <div className="flex justify-center py-20">
           <Loader2 size={32} className="spinner text-[#33b1ff]" />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {lists.map(l => (
             <Link
               key={l.id}
               to={`/lists/${l.id}`}
-              className="folder-card flex flex-col gap-4 relative overflow-hidden aspect-square justify-between p-5"
-              style={{ background: l.color || '#a2d2ff' }}
+              className="folder-card flex flex-col gap-4 relative overflow-hidden aspect-square justify-between p-6 transition-all hover:scale-[1.02]"
+              style={{ background: l.color || '#33b1ff' }}
             >
-              <div className="text-[12px] font-bold text-white/60 absolute top-5 right-5">
+              <div className="text-[12px] font-black text-white absolute top-6 right-6">
                 {l.note_count ?? 0}
               </div>
-              <FolderIcon color="white" size={28} />
-              <h3 className="text-[18px] font-extrabold text-white tracking-tight leading-tight">
+              <FolderIcon color="white" size={32} />
+              <h3 className="text-[20px] font-black text-white tracking-tight leading-tight">
                 {l.name}
               </h3>
             </Link>

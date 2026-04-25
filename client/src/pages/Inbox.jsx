@@ -154,8 +154,15 @@ export default function Inbox() {
   useSSE(handleEvent);
 
   return (
-    <div className="px-6 pt-12 pb-32 max-w-[680px] mx-auto">
+    <div className="px-6 md:px-12 pt-12 pb-32 w-full max-w-5xl mx-auto">
       <ProcessingOverlay jobs={activeJobs} />
+
+      <div className="hidden md:block mb-12">
+        <h1 className="text-[32px] md:text-[42px] font-black tracking-tighter text-[#1a1d1f] leading-tight mb-2">
+          Organize your <br className="hidden md:block" /> digital universe.
+        </h1>
+        <p className="text-sm md:text-base font-bold text-black/30">Capture everything that inspires you.</p>
+      </div>
 
       {/* Top bar */}
       <div className="flex items-center justify-between mb-8">
@@ -213,13 +220,13 @@ export default function Inbox() {
             <Link 
               key={l.id} 
               to={`/lists/${l.id}`}
-              className="folder-card flex flex-col gap-3 relative overflow-hidden transition-transform active:scale-95 hover:opacity-90"
-              style={{ background: l.color || '#a2d2ff' }}
+              className="folder-card flex flex-col gap-3 relative overflow-hidden transition-transform active:scale-95 hover:opacity-100"
+              style={{ background: l.color || '#33b1ff' }}
             >
-              <div className="text-[10px] font-bold text-white/60 absolute top-3 right-3">
+              <div className="text-[10px] font-bold text-white absolute top-3 right-3">
                 {l.note_count ?? 0}
               </div>
-              <FolderIcon color="rgba(255,255,255,0.4)" size={28} />
+              <FolderIcon color="white" size={28} />
               <div className="text-[11px] font-extrabold text-white tracking-tight">
                 {l.name}
               </div>
@@ -246,9 +253,11 @@ export default function Inbox() {
         </div>
       ) : notes.length > 0 ? (
         <>
-          {notes.map(note => (
-            <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
-          ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+            {notes.map(note => (
+              <NoteCard key={note.id} note={note} onToggleFavorite={handleToggleFavorite} />
+            ))}
+          </div>
           
           {hasMore && (
             <div className="mt-8 flex justify-center">

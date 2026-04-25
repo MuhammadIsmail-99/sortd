@@ -10,7 +10,7 @@ export default function NoteCard({ note, onToggleFavorite }) {
   return (
     <Link
       to={`/notes/${note.id}`}
-      className="block bg-white rounded-[24px] p-4 neo-shadow mb-4 transition-all cursor-pointer border border-transparent hover:border-[#a2d2ff]/20 relative"
+      className="block bg-white rounded-[24px] p-4 neo-shadow transition-all cursor-pointer border border-transparent hover:border-[#a2d2ff]/20 relative"
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <div className="flex items-center gap-4">

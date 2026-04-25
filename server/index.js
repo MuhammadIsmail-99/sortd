@@ -22,7 +22,15 @@ const port = process.env.PORT || 3001;
 app.set('trust proxy', 1);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://sortd-client.vercel.app',
+    /\.vercel\.app$/ // Allow all Vercel preview deployments
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 // Rate limiting

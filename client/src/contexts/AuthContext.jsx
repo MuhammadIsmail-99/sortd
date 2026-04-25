@@ -10,7 +10,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = (supabaseUrl && supabaseAnonKey) 
   ? createClient(supabaseUrl, supabaseAnonKey)
-  : { auth: { getSession: () => Promise.resolve({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }) } };
+  : { 
+      auth: { 
+        getSession: () => Promise.resolve({ data: { session: null } }), 
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        signInWithPassword: () => Promise.reject(new Error('Supabase Not Configured')),
+        signUp: () => Promise.reject(new Error('Supabase Not Configured')),
+        signOut: () => Promise.resolve()
+      } 
+    };
 
 const AuthContext = createContext({});
 

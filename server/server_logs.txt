@@ -952,3 +952,13 @@ Note: jobs table may need manual creation: Could not find the function public.ex
 🔐 Auth: Verifying token for request to /api/lists...
 ✅ Auth: User 0eab8f61-13af-47e9-b904-bdf5f7d6ba2d authenticated for /api/lists
 ✅ Auth: User 0eab8f61-13af-47e9-b904-bdf5f7d6ba2d authenticated for /api/events?token=eyJhbGciOiJFUzI1NiIsImtpZCI6IjY0YzgxYTFiLTNiMjEtNDg2Yi1hODQxLTA2ZmRmNmI4MTk0MyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL2dneGpmcWV4ampxc3p3dHZ1cGpjLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIwZWFiOGY2MS0xM2FmLTQ3ZTktYjkwNC1iZGY1ZjdkNmJhMmQiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzc3MjAzNjU2LCJpYXQiOjE3NzcyMDAwNTYsImVtYWlsIjoiaGFqdWdnODhAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6ImhhanVnZzg4QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJwaG9uZV92ZXJpZmllZCI6ZmFsc2UsInN1YiI6IjBlYWI4ZjYxLTEzYWYtNDdlOS1iOTA0LWJkZjVmN2Q2YmEyZCJ9LCJyb2xlIjoiYXV0aGVudGljYXRlZCIsImFhbCI6ImFhbDEiLCJhbXIiOlt7Im1ldGhvZCI6InBhc3N3b3JkIiwidGltZXN0YW1wIjoxNzc3MTgxNzU5fV0sInNlc3Npb25faWQiOiI2NjQ2MTM4OS03M2ZiLTQ0ZmYtYmQ5NC0xY2U4MzE1NjgwODUiLCJpc19hbm9ueW1vdXMiOmZhbHNlfQ.FJI0g1j9luio-VstRXYURrya3_7hUviNsUdTK8p8X0tv_n2TBZll0lXW18pN2tmxLx_hspJuskZvzY3rauBmbQ
+Restarting 'index.js'
+◇ injected env (8) from .env // tip: ⌘ enable debugging { debug: true }
+◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+◇ injected env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+✅ Supabase connected
+Note: jobs table may need manual creation: Could not find the function public.exec_sql(sql) in the schema cache
+🚀 Persistent Queue worker started
+🚀 Sortd Backend running at http://localhost:3001

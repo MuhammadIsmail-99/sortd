@@ -161,45 +161,62 @@ app.delete('/api/lists/:id', authenticate, async (req, res) => {
 
 // Processing
 app.post('/api/process-url', authenticate, async (req, res) => {
-  const { url } = req.body;
-  if (!url) return res.status(400).json({ error: 'URL is required' });
+  try {
+    const { url } = req.body;
+    if (!url) return res.status(400).json({ error: 'URL is required' });
 
-  // Check duplicate for this user
-  const { data: existing } = await db.supabase
-    .from('notes')
-    .select('id')
-    .eq('source_url', url)
-    .eq('user_id', req.user.id)
-    .single();
+    console.log(`🔗 Processing URL: ${url}`);
 
-  if (existing) {
-    return res.status(303).json({ noteId: existing.id });
+    // Check duplicate for this user
+    const { data: existing } = await db.supabase
+      .from('notes')
+      .select('id')
+      .eq('source_url', url)
+      .eq('user_id', req.user.id)
+      .single();
+
+    if (existing) {
+      return res.status(303).json({ noteId: existing.id });
+    }
+
+    const jobId = await enqueue({
+      type: 'url',
+      source: 'api',
+      userId: req.user.id,
+      payload: { url }
+    });
+
+    res.status(202).json({ jobId });
+  } catch (err) {
+    console.error('💥 /api/process-url failed:', err);
+    res.status(500).json({ error: err.message });
   }
-
-  const jobId = await enqueue({
-    type: 'url',
-    source: 'api',
-    userId: req.user.id,
-    payload: { url }
-  });
-
-  res.status(202).json({ jobId });
 });
 
 app.post('/api/process-image', authenticate, upload.single('image'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Image file is required' });
-
-  const jobId = await enqueue({
-    type: 'image',
-    source: 'api',
-    userId: req.user.id,
-    payload: { 
-      filePath: req.file.path,
-      sourceType: 'screenshot'
+  try {
+    if (!req.file) {
+      console.warn('⚠️ No file in /api/process-image request');
+      return res.status(400).json({ error: 'Image file is required' });
     }
-  });
 
-  res.status(202).json({ jobId });
+    console.log(`📸 Processing image: ${req.file.originalname} (${req.file.size} bytes)`);
+
+    const jobId = await enqueue({
+      type: 'image',
+      source: 'api',
+      userId: req.user.id,
+      payload: { 
+        filePath: req.file.path,
+        sourceType: 'screenshot'
+      }
+    });
+
+    res.status(202).json({ jobId });
+  } catch (err) {
+    console.error('💥 /api/process-image failed:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Queue
@@ -270,6 +287,15 @@ app.get('/api/events', authenticate, (req, res) => {
   });
   res.write(`event: connected\ndata: ${JSON.stringify({ serverTime: new Date().toISOString() })}\n\n`);
   addSSEClient(res, req.user.id);
+});
+
+// Error handling
+app.use((err, req, res, next) => {
+  console.error('💥 Global Error Handler:', err);
+  res.status(err.status || 500).json({ 
+    error: err.message || 'Internal Server Error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
 // Start Server

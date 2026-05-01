@@ -14,6 +14,7 @@ import { resetGeminiClient } from './services/gemini.js';
 import { authenticate } from './services/auth.js';
 import { queryRAG } from './services/rag.js';
 import { generateEmbedding } from './services/gemini.js';
+import { validate, NoteSchema, ListSchema, ProcessUrlSchema, ChatSchema, SearchSchema } from './services/validation.js';
 
 dotenv.config();
 
@@ -44,11 +45,21 @@ app.use((req, res, next) => {
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Increased for development/testing
+  max: 1000,
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/', limiter);
+
+// Strict rate limiting for AI processing
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // Max 10 processing requests per minute
+  message: { error: 'Too many requests, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(['/api/process-url', '/api/process-image', '/api/ai/chat'], aiLimiter);
 
 const tempDir = path.resolve('temp');
 if (!fs.existsSync(tempDir)) {
@@ -79,7 +90,7 @@ app.get('/api/notes/:id', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/notes', authenticate, async (req, res) => {
+app.post('/api/notes', authenticate, validate(NoteSchema), async (req, res) => {
   try {
     const note = await db.createNote({
       id: uuidv4(),
@@ -92,7 +103,7 @@ app.post('/api/notes', authenticate, async (req, res) => {
   }
 });
 
-app.patch('/api/notes/:id', authenticate, async (req, res) => {
+app.patch('/api/notes/:id', authenticate, validate(NoteSchema.partial()), async (req, res) => {
   try {
     const note = await db.updateNote(req.params.id, req.body, req.user.id);
     res.json(note);
@@ -129,7 +140,7 @@ app.get('/api/lists', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/lists', authenticate, async (req, res) => {
+app.post('/api/lists', authenticate, validate(ListSchema), async (req, res) => {
   try {
     const list = await db.createList({
       id: uuidv4(),
@@ -141,7 +152,7 @@ app.post('/api/lists', authenticate, async (req, res) => {
   }
 });
 
-app.patch('/api/lists/:id', authenticate, async (req, res) => {
+app.patch('/api/lists/:id', authenticate, validate(ListSchema.partial()), async (req, res) => {
   try {
     const list = await db.updateList(req.params.id, req.body, req.user.id);
     res.json(list);
@@ -160,10 +171,9 @@ app.delete('/api/lists/:id', authenticate, async (req, res) => {
 });
 
 // Processing
-app.post('/api/process-url', authenticate, async (req, res) => {
+app.post('/api/process-url', authenticate, validate(ProcessUrlSchema), async (req, res) => {
   try {
     const { url } = req.body;
-    if (!url) return res.status(400).json({ error: 'URL is required' });
 
     console.log(`🔗 Processing URL: ${url}`);
 
@@ -255,23 +265,16 @@ app.get('/api/settings', authenticate, async (req, res) => {
   }
 });
 
-app.post('/api/settings/gemini-key', authenticate, async (req, res) => {
-  try {
-    await db.setSetting('gemini_api_key', req.body.key);
-    resetGeminiClient();
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Removed for security: Unauthorized users should not be able to change global AI keys.
+// Use environment variables or direct database access to manage system-wide settings.
+// app.post('/api/settings/gemini-key', authenticate, async (req, res) => { ... });
 
 
 
-app.post('/api/ai/chat', authenticate, async (req, res) => {
+app.post('/api/ai/chat', authenticate, validate(ChatSchema), async (req, res) => {
   try {
     const { query } = req.body;
     console.log(`🤖 Chat Request: "${query}" from user ${req.user.id}`);
-    if (!query) return res.status(400).json({ error: 'Query is required' });
     
     const result = await queryRAG(query, req.user.id);
     res.json(result);
@@ -281,10 +284,9 @@ app.post('/api/ai/chat', authenticate, async (req, res) => {
   }
 });
 
-app.get('/api/search', authenticate, async (req, res) => {
+app.get('/api/search', authenticate, validate(SearchSchema), async (req, res) => {
   try {
     const { query } = req.query;
-    if (!query) return res.status(400).json({ error: 'Query is required' });
     
     const embedding = await generateEmbedding(query);
     if (!embedding) throw new Error('Failed to generate search vector');
@@ -330,9 +332,13 @@ app.get('/api/events', authenticate, async (req, res) => {
 // Error handling
 app.use((err, req, res, next) => {
   console.error('💥 Global Error Handler:', err);
-  res.status(err.status || 500).json({ 
-    error: err.message || 'Internal Server Error',
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+
+  const isDev = process.env.NODE_ENV === 'development';
+  const status = err.status || 500;
+
+  res.status(status).json({
+    error: isDev || status < 500 ? err.message : 'Internal Server Error',
+    stack: isDev ? err.stack : undefined
   });
 });
 
